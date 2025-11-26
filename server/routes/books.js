@@ -19,7 +19,7 @@ router.get('/kr-books', async (req, res) => {
     if (await cacheExists('kr')) {
       const books = await getBooksFromCache('kr');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (KR):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (KR): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -89,10 +89,10 @@ router.get('/kr-books', async (req, res) => {
       });
     });
 
-    console.log('✅ 한국 크롤링 성공:', books.length, '권');
+    console.log(`✅ 한국 크롤링 성공: ${books.length}권`);
     res.json({ books });
   } catch (err) {
-    console.error('❌ 한국 크롤링 실패:', err);
+    console.error('❌ 한국 크롤링 실패:', err.message);
     res.status(500).json({ error: '크롤링 실패', message: err.message });
   }
 });
@@ -106,7 +106,7 @@ router.get('/us-books', async (req, res) => {
     if (await cacheExists('us')) {
       const books = await getBooksFromCache('us');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (US):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (US): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -155,10 +155,10 @@ router.get('/us-books', async (req, res) => {
     });
 
     await browser.close();
-    console.log(`✅ Amazon 크롤링 성공: ${books.length}권`);
+    console.log(`✅ 미국 크롤링 성공: ${books.length}권`);
     res.json({ books });
   } catch (err) {
-    console.error('❌ Amazon 크롤링 실패:', err);
+    console.error('❌ 미국 크롤링 실패:', err.message);
     res.status(500).json({ error: 'US 크롤링 실패', message: err.message });
   }
 });
@@ -172,53 +172,7 @@ router.get('/tw-books', async (req, res) => {
     if (await cacheExists('tw')) {
       const books = await getBooksFromCache('tw');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (TW):', books.length, '권');
-        return res.json({ books });
-      }
-    }
-
-    // 실시간 크롤링 (기존 로직 - 필요시 추가 가능)
-    console.log('📘 실시간 크롤링 시작 (TW)...');
-    res.status(503).json({ error: '대만 데이터는 배치 크롤링 결과만 제공됩니다' });
-  } catch (err) {
-    console.error('❌ 대만 크롤링 실패:', err);
-    res.status(500).json({ error: 'TW 크롤링 실패', message: err.message });
-  }
-});
-
-/**
- * 프랑스 책 목록 (Amazon.fr)
- */
-router.get('/fr-books', async (req, res) => {
-  try {
-    // 캐시 확인
-    if (await cacheExists('fr')) {
-      const books = await getBooksFromCache('fr');
-      if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (FR):', books.length, '권');
-        return res.json({ books });
-      }
-    }
-
-    // 실시간 크롤링 (기존 로직 - 필요시 추가 가능)
-    console.log('📘 실시간 크롤링 시작 (FR)...');
-    res.status(503).json({ error: '프랑스 데이터는 배치 크롤링 결과만 제공됩니다' });
-  } catch (err) {
-    console.error('❌ 프랑스 크롤링 실패:', err);
-    res.status(500).json({ error: 'FR 크롤링 실패', message: err.message });
-  }
-});
-
-/**
- * 대만 책 목록
- */
-router.get('/tw-books', async (req, res) => {
-  try {
-    // 캐시 확인
-    if (await cacheExists('tw')) {
-      const books = await getBooksFromCache('tw');
-      if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (TW):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (TW): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -227,7 +181,7 @@ router.get('/tw-books', async (req, res) => {
     console.log('⚠️ 대만 데이터 캐시 없음');
     res.json({ books: [] });
   } catch (err) {
-    console.error('❌ 대만 데이터 로드 실패:', err);
+    console.error('❌ 대만 데이터 로드 실패:', err.message);
     res.status(500).json({ error: 'TW 데이터 로드 실패', message: err.message });
   }
 });
@@ -241,7 +195,7 @@ router.get('/fr-books', async (req, res) => {
     if (await cacheExists('fr')) {
       const books = await getBooksFromCache('fr');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (FR):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (FR): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -250,7 +204,7 @@ router.get('/fr-books', async (req, res) => {
     console.log('⚠️ 프랑스 데이터 캐시 없음');
     res.json({ books: [] });
   } catch (err) {
-    console.error('❌ 프랑스 데이터 로드 실패:', err);
+    console.error('❌ 프랑스 데이터 로드 실패:', err.message);
     res.status(500).json({ error: 'FR 데이터 로드 실패', message: err.message });
   }
 });
@@ -264,7 +218,7 @@ router.get('/uk-books', async (req, res) => {
     if (await cacheExists('uk')) {
       const books = await getBooksFromCache('uk');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (UK):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (UK): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -273,7 +227,7 @@ router.get('/uk-books', async (req, res) => {
     console.log('⚠️ 영국 데이터 캐시 없음');
     res.json({ books: [] });
   } catch (err) {
-    console.error('❌ 영국 데이터 로드 실패:', err);
+    console.error('❌ 영국 데이터 로드 실패:', err.message);
     res.status(500).json({ error: 'UK 데이터 로드 실패', message: err.message });
   }
 });
@@ -287,7 +241,7 @@ router.get('/jp-books', async (req, res) => {
     if (await cacheExists('jp')) {
       const books = await getBooksFromCache('jp');
       if (books.length > 0) {
-        console.log('✅ 캐시된 데이터 사용 (JP):', books.length, '권');
+        console.log(`✅ 캐시된 데이터 사용 (JP): ${books.length}권`);
         return res.json({ books });
       }
     }
@@ -402,10 +356,10 @@ router.get('/jp-books', async (req, res) => {
     });
 
     await browser.close();
-    console.log(`✅ 일본 베스트셀러 ${books.length}권 크롤링 성공`);
+    console.log(`✅ 일본 크롤링 성공: ${books.length}권`);
     res.json({ books });
   } catch (err) {
-    console.error('❌ Puppeteer JP 크롤링 실패:', err);
+    console.error('❌ 일본 크롤링 실패:', err.message);
     res.status(500).json({ error: 'JP 크롤링 실패', message: err.message });
   }
 });

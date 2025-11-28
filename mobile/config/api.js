@@ -2,7 +2,7 @@
 // 개발/프로덕션 환경에 따라 자동 전환
 const API_BASE_URL = __DEV__ 
   ? 'http://10.0.2.2:4000'  // 개발: 안드로이드 에뮬레이터
-  : 'https://your-cloud-run-url.run.app';  // 프로덕션: 구글 클라우드 (배포 후 실제 URL로 변경)
+  : 'https://bestseller-979970292886.us-central1.run.app';  // 프로덕션: 구글 클라우드
 
 export default {
   baseURL: API_BASE_URL,

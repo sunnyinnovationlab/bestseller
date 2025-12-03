@@ -149,6 +149,7 @@ export default function MainScreen({ navigation }) {
               publisherReview: item.publisherReview,
               plot: item.plot,
               other: item.moreInfo,
+              rank: index + 1,
             },
           });
         }}

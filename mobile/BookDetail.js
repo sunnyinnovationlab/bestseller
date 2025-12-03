@@ -9,7 +9,10 @@ import {
   Linking,
   ActivityIndicator,
   StyleSheet,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useBookmark } from './BookmarkContext';
 import { CloseIcon, StarIcon, ShareIcon, ExternalLinkIcon } from './components/IconButton';
 import apiConfig from './config/api';
@@ -19,27 +22,27 @@ import { useLanguage } from './LanguageContext';
 const COUNTRY_CONFIG = {
   KR: {
     apiEndpoint: 'kr-book-detail',
-    storeName: 'Store',
+    storeName: 'Kyobo',
     defaultAuthorText: 'is a renowned author known for their insightful works.',
   },
   US: {
     apiEndpoint: 'us-book-detail',
-    storeName: 'Store',
+    storeName: 'Amazon',
     defaultAuthorText: 'is a renowned writer known for their insightful works.',
   },
   JP: {
     apiEndpoint: 'jp-book-detail',
-    storeName: 'Store',
+    storeName: 'Amazon',
     defaultAuthorText: 'は、洞察力のある作品で知られる著名な作家です。',
   },
   TW: {
     apiEndpoint: 'tw-book-detail',
-    storeName: 'Store',
+    storeName: 'Books.com.tw',
     defaultAuthorText: 'is a renowned writer known for their insightful works.',
   },
   FR: {
     apiEndpoint: 'fr-book-detail',
-    storeName: 'Store',
+    storeName: 'Amazon FR',
     defaultAuthorText: 'est un écrivain renommé connu pour ses œuvres perspicaces.',
   },
   UK: {
@@ -60,6 +63,16 @@ export default function BookDetail({ route, navigation }) {
   const [activeTab, setActiveTab] = useState('contents');
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const { isBookmarked, toggleBookmark } = useBookmark();
+  
+  // Wiki Modal State
+  const [wikiModalVisible, setWikiModalVisible] = useState(false);
+  const [wikiUrl, setWikiUrl] = useState('');
+
+  const openWiki = (query) => {
+    const url = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`;
+    setWikiUrl(url);
+    setWikiModalVisible(true);
+  };
 
   const tabHeaderMap = useMemo(
     () => ({
@@ -275,10 +288,22 @@ export default function BookDetail({ route, navigation }) {
           )}
           <View style={styles.bookInfo}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>Bestseller</Text>
+              <Text style={styles.badgeText}>#{book.rank || 1} Best Seller</Text>
             </View>
             <Text style={styles.title}>{book.title}</Text>
-            <Text style={styles.author}>{book.author || 'Unknown Author'}</Text>
+            <View style={styles.authorContainer}>
+              <Text style={styles.author}>{book.author || 'Unknown Author'}</Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  if (book.author) {
+                    openWiki(book.author);
+                  }
+                }}
+                style={styles.wikiButton}
+              >
+                <Text style={styles.wikiButtonText}>Author Wiki</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.descriptionContainer}>
               <Text 
                 style={styles.description}
@@ -324,8 +349,11 @@ export default function BookDetail({ route, navigation }) {
             <ExternalLinkIcon size={16} color="#fff" />
             <Text style={styles.viewStoreText}>View on {config.storeName}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.previewButton}>
-            <Text style={styles.previewText}>Preview</Text>
+          <TouchableOpacity 
+            style={styles.previewButton}
+            onPress={() => openWiki(book.title)}
+          >
+            <Text style={styles.previewText}>Wikipedia</Text>
           </TouchableOpacity>
         </View>
 
@@ -367,6 +395,39 @@ export default function BookDetail({ route, navigation }) {
           renderTabContent()
         )}
       </ScrollView>
+
+      {/* 위키피디아 모달 */}
+      <Modal
+        visible={wikiModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setWikiModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity 
+            style={styles.modalBackgroundClick} 
+            onPress={() => setWikiModalVisible(false)} 
+            activeOpacity={1}
+          />
+          <View style={styles.modalContent}>
+            <TouchableOpacity 
+              style={styles.closeModalButton}
+              onPress={() => setWikiModalVisible(false)}
+            >
+              <CloseIcon size={24} color="#000" />
+            </TouchableOpacity>
+            <WebView 
+              source={{ uri: wikiUrl }}
+              style={styles.webView}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={true}
+              scalesPageToFit={true}
+              mixedContentMode="always"
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -447,10 +508,27 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 28,
   },
+  authorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
   author: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 12,
+    marginRight: 8,
+  },
+  wikiButton: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  wikiButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   descriptionContainer: {
     marginTop: 4,
@@ -565,6 +643,30 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 10,
     fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalBackgroundClick: {
+    flex: 1,
+  },
+  modalContent: {
+    height: '75%',
+    width: '100%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  closeModalButton: {
+    alignSelf: 'flex-end',
+    padding: 15,
+    zIndex: 1,
+  },
+  webView: {
+    flex: 1,
   },
 });
 

@@ -39,14 +39,7 @@ const fetchSheet = async url => {
   return parseTSV(text);
 };
 
-const blockMatrix = {
-  0: { 0: 0, 1: 1, 2: 1 }, // Korean
-  1: { 0: 1, 1: 2, 2: 2 }, // English
-  2: { 0: 3, 1: 3, 2: 4 }, // Japanese
-  3: { 0: 0, 1: 0, 2: 0 }, // Chinese (placeholder)
-  4: { 0: 3, 1: 0, 2: 4 }, // Taiwanese
-  5: { 0: 4, 1: 4, 2: 0 }, // French
-};
+
 
 export const LanguageProvider = ({ children }) => {
   const [userLanguage, setUserLanguage] = useState(0);
@@ -62,56 +55,64 @@ export const LanguageProvider = ({ children }) => {
 
   const sheetUrl = useMemo(() => DATA_SHEETS[country] ?? DATA_SHEETS[0], [country]);
 
-  const resolveBlockIndex = useCallback(() => {
-    const languageMap = blockMatrix[language];
-    if (languageMap && typeof languageMap[country] === 'number') {
-      return languageMap[country];
-    }
-    return 0;
-  }, [country, language]);
 
+
+  // 1. Fetch Translations (Once)
+  useEffect(() => {
+    const loadTranslations = async () => {
+      try {
+        const rows = await fetchSheet(TRANSLATION_URL);
+        setTranslations(rows);
+        const labelsRow = rows[18] ?? [];
+        const normalizedLabels = [...labelsRow];
+        while (normalizedLabels.length < 6) {
+          normalizedLabels.push('');
+        }
+        setLanguageLabels(normalizedLabels);
+      } catch (err) {
+        console.error('Failed to load translations', err);
+      }
+    };
+    loadTranslations();
+  }, []);
+
+  // 2. Fetch Data (When country/sheetUrl changes)
   const fetchSheets = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [translationRows, sheetRows] = await Promise.all([
-        fetchSheet(TRANSLATION_URL),
-        fetchSheet(sheetUrl),
-      ]);
-
-      setTranslations(translationRows);
-      const labelsRow = translationRows[18] ?? [];
-      const normalizedLabels = [...labelsRow];
-      while (normalizedLabels.length < 6) {
-        normalizedLabels.push('');
-      }
-      setLanguageLabels(normalizedLabels);
-      setData(sheetRows);
-
-      const blockIndex = resolveBlockIndex();
-      const startIndex = 2 + blockIndex * 5;
-
-      const rawHeaderRow = sheetRows[0] ?? [];
-      const headerSlice = rawHeaderRow.slice(startIndex, startIndex + 5);
-      const headerRow = [rawHeaderRow[1] ?? '', ...headerSlice];
-      while (headerRow.length < 6) {
-        headerRow.push('');
-      }
-      setColumnHeaders(headerRow);
-
-      const rowsWithoutHeader = sheetRows.slice(1);
-      const filtered = filterColumns(rowsWithoutHeader, startIndex);
-      setFilteredData(filtered);
+      const rows = await fetchSheet(sheetUrl);
+      setData(rows);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [resolveBlockIndex, sheetUrl]);
+  }, [sheetUrl]);
 
   useEffect(() => {
     fetchSheets();
   }, [fetchSheets]);
+
+  // 3. Process Data (When data or language changes)
+  useEffect(() => {
+    if (!data.length) return;
+
+    const blockIndex = language;
+    const startIndex = 2 + blockIndex * 5;
+
+    const rawHeaderRow = data[0] ?? [];
+    const headerSlice = rawHeaderRow.slice(startIndex, startIndex + 5);
+    const headerRow = [rawHeaderRow[1] ?? '', ...headerSlice];
+    while (headerRow.length < 6) {
+      headerRow.push('');
+    }
+    setColumnHeaders(headerRow);
+
+    const rowsWithoutHeader = data.slice(1);
+    const filtered = filterColumns(rowsWithoutHeader, startIndex);
+    setFilteredData(filtered);
+  }, [data, language]);
 
   const contextValue = useMemo(
     () => ({

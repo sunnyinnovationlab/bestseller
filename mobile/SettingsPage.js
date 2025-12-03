@@ -127,7 +127,7 @@ export default function SettingsPage({ navigation }) {
                   ]}
                   onPress={() => {
                     setUserLanguage(option.value);
-                    setLanguage(option.value);
+                    setLanguage(option.value + 1);
                     setIsLanguageOpen(false);
                   }}
                 >

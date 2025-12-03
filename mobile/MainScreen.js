@@ -11,6 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BookmarkScreen from './Bookmark';
 import SettingsPage, { LANGUAGE_OPTIONS } from './SettingsPage';
+import LoadingScreen from './LoadingScreen';
 import { useBookmark } from './BookmarkContext';
 import { useLanguage } from './LanguageContext';
 
@@ -73,9 +74,22 @@ export default function MainScreen({ navigation }) {
     [country]
   );
 
+  const detailsTitle = useMemo(() => {
+    if (!filteredData.length) return null;
+    const row = filteredData[0];
+    return {
+      image: row[0] || '',
+      title: row[1] || '',
+      author: row[2] || '',
+      authorInfo: row[3] || '',
+      description: row[4] || '',
+      moreInfo: row[5] || '',
+    };
+  }, [filteredData]);
+
   const books = useMemo(
     () =>
-      filteredData.map(row => ({
+      filteredData.slice(1).map(row => ({
         image: row[0] || '',
         title: row[1] || '',
         author: row[2] || '',
@@ -104,9 +118,6 @@ export default function MainScreen({ navigation }) {
     const nextIndex = COUNTRY_LABEL_TO_INDEX[label];
     if (typeof nextIndex === 'number') {
       setCountry(nextIndex);
-      // Switch to original language by default when changing country
-      const originalLang = COUNTRY_INDEX_TO_LABEL_COLUMN[nextIndex] ?? 1;
-      setLanguage(originalLang);
     }
   };
 
@@ -218,12 +229,7 @@ export default function MainScreen({ navigation }) {
 
   const renderHomeContent = () => {
     if (loading) {
-      return (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4285F4" />
-          <Text style={{ color: '#666', marginTop: 10 }}>불러오는 중...</Text>
-        </View>
-      );
+      return <LoadingScreen />;
     }
 
     if (error) {
@@ -256,29 +262,29 @@ export default function MainScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.languageOption,
-                language !== userLanguage && styles.languageOptionActive
+                language === (userLanguage + 1) && styles.languageOptionActive
               ]}
-              onPress={() => setLanguage(originalLanguageIndex)}
+              onPress={() => setLanguage(userLanguage + 1)}
             >
               <Text style={[
                 styles.languageText,
-                language !== userLanguage && styles.languageTextActive
+                language === (userLanguage + 1) && styles.languageTextActive
               ]}>
-                {originalLabel}
+              {userLanguageLabel}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.languageOption,
-                language === userLanguage && styles.languageOptionActive
+                language === 0 && styles.languageOptionActive
               ]}
-              onPress={() => setLanguage(userLanguage)}
+              onPress={() => setLanguage(0)}
             >
               <Text style={[
                 styles.languageText,
-                language === userLanguage && styles.languageTextActive
+                language === 0 && styles.languageTextActive
               ]}>
-                {userLanguageLabel}
+              {originalLabel}
               </Text>
             </TouchableOpacity>
           </View>

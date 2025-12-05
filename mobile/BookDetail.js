@@ -282,9 +282,6 @@ export default function BookDetail({ route, navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {/* <View style={styles.adContainer}>
-          <MyAds type="adaptive" size={BannerAdSize.BANNER} />
-        </View> */}
         {/* 책 커버 및 정보 */}
         <View style={styles.bookHeader}>
           {book.image ? (
@@ -436,7 +433,7 @@ export default function BookDetail({ route, navigation }) {
             />
           </View>
 
-          <View style={styles.adContainer}>
+          <View style={[styles.adContainer, { marginBottom: 0 }]} >
             <MyAds type="adaptive" size={BannerAdSize.BANNER} />
           </View>
         </View>

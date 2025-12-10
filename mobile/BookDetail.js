@@ -11,12 +11,16 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
-// WebView는 react-native-webview 패키지 설치 필요
-// 설치 후 아래 주석을 해제하세요: npm install react-native-webview
-// import { WebView } from 'react-native-webview';
+
+import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBookmark } from './BookmarkContext';
-import { CloseIcon, StarIcon, ShareIcon, ExternalLinkIcon } from './components/IconButton';
+import {
+  CloseIcon,
+  StarIcon,
+  ShareIcon,
+  ExternalLinkIcon,
+} from './components/IconButton';
 import apiConfig from './config/api';
 
 // 번역 데이터 (Google Sheets 기반)
@@ -60,7 +64,7 @@ const translations = {
     viewOnStore: 'Voir en magasin', // Row 29, Column F
     author: 'auteur', // Row 30, Column F
     aboutBook: 'Informations sur le livre', // Row 31, Column F
-    moreInfo: 'Plus d\'informations', // Row 32, Column F
+    moreInfo: "Plus d'informations", // Row 32, Column F
   },
 };
 
@@ -89,7 +93,8 @@ const COUNTRY_CONFIG = {
   FR: {
     apiEndpoint: 'fr-book-detail',
     storeName: 'Store',
-    defaultAuthorText: 'est un écrivain renommé connu pour ses œuvres perspicaces.',
+    defaultAuthorText:
+      'est un écrivain renommé connu pour ses œuvres perspicaces.',
   },
   UK: {
     apiEndpoint: 'uk-book-detail',
@@ -102,7 +107,7 @@ export default function BookDetail({ route, navigation }) {
   const { book } = route.params;
   const country = book.country || 'US';
   const config = COUNTRY_CONFIG[country] || COUNTRY_CONFIG.US;
-  
+
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('author'); // 기본값을 'author'로 변경
@@ -110,7 +115,7 @@ export default function BookDetail({ route, navigation }) {
   const [appLanguage, setAppLanguage] = useState('English');
   const [wikiModalVisible, setWikiModalVisible] = useState(false);
   const [wikiUrl, setWikiUrl] = useState('');
-  const [wikiType, setWikiType] = useState(''); // 'title' or 'author'
+  const [wikiType, setWikiType] = useState('');
   const { isBookmarked, toggleBookmark } = useBookmark();
 
   // 앱 언어 설정 불러오기
@@ -128,49 +133,39 @@ export default function BookDetail({ route, navigation }) {
     loadAppLanguage();
   }, []);
 
-  // 위키 URL 생성 함수
-  const getWikiUrl = (query, type) => {
-    const languageMap = {
-      'Korean': 'ko',
-      'English': 'en',
-      'Japanese': 'ja',
-      'Chinese': 'zh',
-      'Traditional Chinese': 'zh-tw',
-      'French': 'fr',
-    };
-    const lang = languageMap[appLanguage] || 'en';
-    const encodedQuery = encodeURIComponent(query);
-    return `https://${lang}.wikipedia.org/wiki/${encodedQuery}`;
+  //위키피디아 함수(웹뷰.모달-mary)
+  const searchAuthor = authorName => {
+    if (!authorName || authorName === '저자 정보 없음') {
+      return;
+    }
+    const url = `https://en.wikipedia.org/wiki/${encodeURIComponent(
+      authorName,
+    )}`;
+    setWikiUrl(url);
+    setWikiType('author');
+    setWikiModalVisible(true);
   };
 
-  // 위키 팝업 열기
-  const openWiki = async (query, type) => {
-    const url = getWikiUrl(query, type);
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        // WebView가 설치되어 있으면 팝업으로, 없으면 외부 브라우저로 열기
-        // WebView 사용 시 아래 주석 해제하고 Linking.openURL 주석 처리
-        setWikiUrl(url);
-        setWikiType(type);
-        setWikiModalVisible(true);
-        // await Linking.openURL(url); // WebView 사용 시 주석 처리
-      }
-    } catch (error) {
-      console.error('Error opening wiki URL:', error);
-      // 에러 발생 시 외부 브라우저로 열기
-      try {
-        await Linking.openURL(url);
-      } catch (e) {
-        console.error('Error opening URL in browser:', e);
-      }
+  const searchTitle = title => {
+    if (!title) {
+      return;
     }
+    const url = `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+    setWikiUrl(url);
+    setWikiType('title');
+    setWikiModalVisible(true);
   };
 
   // 책 상세 정보 가져오기
   useEffect(() => {
     // 먼저 book 객체에 이미 상세 정보가 있는지 확인 (캐시 데이터)
-    if (book.authorInfo || book.publisherReview || book.description || book.contents || book.plot) {
+    if (
+      book.authorInfo ||
+      book.publisherReview ||
+      book.description ||
+      book.contents ||
+      book.plot
+    ) {
       setDetails({
         authorInfo: book.authorInfo || '',
         publisherReview: book.publisherReview || '',
@@ -180,17 +175,14 @@ export default function BookDetail({ route, navigation }) {
         tableOfContents: book.tableOfContents || '',
       });
       setLoading(false);
-      
+
       // link가 있으면 추가로 API 호출하여 더 자세한 정보 가져오기 (선택적)
       if (book.link) {
         const countryKey = country.toLowerCase();
-        const detailUrl = apiConfig.endpoints[`${countryKey}BookDetail`] || 
+        const detailUrl =
+          apiConfig.endpoints[`${countryKey}BookDetail`] ||
           `${apiConfig.baseURL}/${config.apiEndpoint}`;
-        fetch(
-          `${detailUrl}?url=${encodeURIComponent(
-            book.link,
-          )}`,
-        )
+        fetch(`${detailUrl}?url=${encodeURIComponent(book.link)}`)
           .then(res => {
             if (res.ok) {
               return res.json();
@@ -203,11 +195,13 @@ export default function BookDetail({ route, navigation }) {
               setDetails(prev => ({
                 ...prev,
                 authorInfo: data.authorInfo || prev.authorInfo || '',
-                publisherReview: data.publisherReview || prev.publisherReview || '',
+                publisherReview:
+                  data.publisherReview || prev.publisherReview || '',
                 description: data.description || prev.description || '',
                 contents: data.contents || prev.contents || '',
                 plot: data.plot || prev.plot || '',
-                tableOfContents: data.tableOfContents || prev.tableOfContents || '',
+                tableOfContents:
+                  data.tableOfContents || prev.tableOfContents || '',
               }));
             }
           })
@@ -221,13 +215,10 @@ export default function BookDetail({ route, navigation }) {
       console.log('📘 요청 URL:', book.link);
 
       const countryKey = country.toLowerCase();
-      const detailUrl = apiConfig.endpoints[`${countryKey}BookDetail`] || 
+      const detailUrl =
+        apiConfig.endpoints[`${countryKey}BookDetail`] ||
         `${apiConfig.baseURL}/${config.apiEndpoint}`;
-      fetch(
-        `${detailUrl}?url=${encodeURIComponent(
-          book.link,
-        )}`,
-      )
+      fetch(`${detailUrl}?url=${encodeURIComponent(book.link)}`)
         .then(res => {
           console.log('📘 응답 상태:', res.status);
           return res.json();
@@ -245,24 +236,32 @@ export default function BookDetail({ route, navigation }) {
       // 데이터가 전혀 없는 경우
       setLoading(false);
     }
-  }, [book.link, book.description, book.contents, book.authorInfo, book.publisherReview, book.plot, config.apiEndpoint]);
+  }, [
+    book.link,
+    book.description,
+    book.contents,
+    book.authorInfo,
+    book.publisherReview,
+    book.plot,
+    config.apiEndpoint,
+  ]);
 
   // 번역 가져오기
-  const getTranslation = (key) => {
+  const getTranslation = key => {
     const languageMap = {
-      'Korean': 'korean',
-      'English': 'english',
-      'Japanese': 'japanese',
-      'Chinese': 'chinese',
+      Korean: 'korean',
+      English: 'english',
+      Japanese: 'japanese',
+      Chinese: 'chinese',
       'Traditional Chinese': 'traditionalChinese',
-      'French': 'french',
+      French: 'french',
     };
     const langKey = languageMap[appLanguage] || 'english';
     return translations[langKey]?.[key] || translations.english[key];
   };
 
   // 탭 제목 가져오기
-  const getTabTitle = (tab) => {
+  const getTabTitle = tab => {
     switch (tab) {
       case 'author':
         return getTranslation('author');
@@ -282,7 +281,7 @@ export default function BookDetail({ route, navigation }) {
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>{getTabTitle('author')}</Text>
             <Text style={styles.tabContentText}>
-              {details?.authorInfo || 
+              {details?.authorInfo ||
                 `${book.author || 'The author'} ${config.defaultAuthorText}`}
             </Text>
           </View>
@@ -290,9 +289,13 @@ export default function BookDetail({ route, navigation }) {
       case 'aboutBook':
         return (
           <View style={styles.tabContent}>
-            <Text style={styles.tabContentTitle}>{getTabTitle('aboutBook')}</Text>
+            <Text style={styles.tabContentTitle}>
+              {getTabTitle('aboutBook')}
+            </Text>
             {details?.tableOfContents ? (
-              <Text style={styles.tabContentText}>{details.tableOfContents}</Text>
+              <Text style={styles.tabContentText}>
+                {details.tableOfContents}
+              </Text>
             ) : details?.plot ? (
               <View>
                 <Text style={styles.tabContentText}>{details.plot}</Text>
@@ -310,12 +313,16 @@ export default function BookDetail({ route, navigation }) {
                 </Text>
                 {(details?.publisher || book.publisher) && (
                   <View style={styles.infoSection}>
-                    <Text style={styles.tabContentSubtitle}>Publication Information</Text>
+                    <Text style={styles.tabContentSubtitle}>
+                      Publication Information
+                    </Text>
                     <Text style={styles.tabContentText}>
                       Publisher: {details.publisher || book.publisher}
                     </Text>
                     {details?.publishDate && (
-                      <Text style={styles.tabContentText}>Published: {details.publishDate}</Text>
+                      <Text style={styles.tabContentText}>
+                        Published: {details.publishDate}
+                      </Text>
                     )}
                   </View>
                 )}
@@ -326,9 +333,14 @@ export default function BookDetail({ route, navigation }) {
       case 'moreInfo':
         return (
           <View style={styles.tabContent}>
-            <Text style={styles.tabContentTitle}>{getTabTitle('moreInfo')}</Text>
+            <Text style={styles.tabContentTitle}>
+              {getTabTitle('moreInfo')}
+            </Text>
             <Text style={styles.tabContentText}>
-              {details?.publisherReview || details?.review || details?.contents || details?.description || 
+              {details?.publisherReview ||
+                details?.review ||
+                details?.contents ||
+                details?.description ||
                 'Publisher review information is not available.'}
             </Text>
           </View>
@@ -353,10 +365,10 @@ export default function BookDetail({ route, navigation }) {
             style={styles.iconButton}
             onPress={() => toggleBookmark({ ...book, country })}
           >
-            <StarIcon 
-              size={24} 
-              color="#000" 
-              filled={isBookmarked(book.title)} 
+            <StarIcon
+              size={24}
+              color="#000"
+              filled={isBookmarked(book.title)}
             />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
@@ -365,13 +377,18 @@ export default function BookDetail({ route, navigation }) {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+      >
         {/* 책 커버 및 정보 */}
         <View style={styles.bookHeaderContainer}>
-          <View style={[
-            styles.bookHeader,
-            descriptionExpanded && styles.bookHeaderExpanded
-          ]}>
+          <View
+            style={[
+              styles.bookHeader,
+              descriptionExpanded && styles.bookHeaderExpanded,
+            ]}
+          >
             <View style={styles.bookImageContainer}>
               {book.image ? (
                 <Image source={{ uri: book.image }} style={styles.bookImage} />
@@ -403,36 +420,39 @@ export default function BookDetail({ route, navigation }) {
                 </TouchableOpacity>
               )}
             </View>
-            <View style={[
-              styles.bookInfo,
-              descriptionExpanded && styles.bookInfoExpanded
-            ]}>
-              <TouchableOpacity onPress={() => book.title && openWiki(book.title, 'title')}>
+            <View
+              style={[
+                styles.bookInfo,
+                descriptionExpanded && styles.bookInfoExpanded,
+              ]}
+            >
+              <TouchableOpacity onPress={() => searchTitle(book.title)}>
                 <Text style={styles.title}>{book.title}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => book.author && openWiki(book.author, 'author')}>
-                <Text style={styles.author}>{book.author || 'Unknown Author'}</Text>
+              <TouchableOpacity onPress={() => searchAuthor(book.author)}>
+                <Text style={styles.author}>
+                  {book.author || 'Unknown Author'}
+                </Text>
               </TouchableOpacity>
               {!descriptionExpanded && (
                 <View style={styles.descriptionContainer}>
-                  <Text 
-                    style={styles.description}
-                    numberOfLines={3}
-                  >
-                    {details?.contents || details?.description || 
+                  <Text style={styles.description} numberOfLines={3}>
+                    {details?.contents ||
+                      details?.description ||
                       'A compelling story that captivates readers with its depth and insight.'}
                   </Text>
-                  {((details?.contents || details?.description) && 
-                    ((details.contents?.length > 150) || (details.description?.length > 150))) && (
-                    <TouchableOpacity
-                      onPress={() => setDescriptionExpanded(!descriptionExpanded)}
-                      style={styles.moreButton}
-                    >
-                      <Text style={styles.moreButtonText}>
-                        See More
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  {(details?.contents || details?.description) &&
+                    (details.contents?.length > 150 ||
+                      details.description?.length > 150) && (
+                      <TouchableOpacity
+                        onPress={() =>
+                          setDescriptionExpanded(!descriptionExpanded)
+                        }
+                        style={styles.moreButton}
+                      >
+                        <Text style={styles.moreButtonText}>See More</Text>
+                      </TouchableOpacity>
+                    )}
                 </View>
               )}
             </View>
@@ -440,26 +460,21 @@ export default function BookDetail({ route, navigation }) {
           {/* 확장된 설명 - View on Store 버튼 아래까지 확장 */}
           {descriptionExpanded && (
             <View style={styles.descriptionExpandedContainer}>
-              <Text 
-                style={[
-                  styles.description,
-                  styles.descriptionExpanded
-                ]}
-              >
-                {details?.contents || details?.description || 
+              <Text style={[styles.description, styles.descriptionExpanded]}>
+                {details?.contents ||
+                  details?.description ||
                   'A compelling story that captivates readers with its depth and insight.'}
               </Text>
-              {((details?.contents || details?.description) && 
-                ((details.contents?.length > 150) || (details.description?.length > 150))) && (
-                <TouchableOpacity
-                  onPress={() => setDescriptionExpanded(!descriptionExpanded)}
-                  style={styles.moreButton}
-                >
-                  <Text style={styles.moreButtonText}>
-                    Show Less
-                  </Text>
-                </TouchableOpacity>
-              )}
+              {(details?.contents || details?.description) &&
+                (details.contents?.length > 150 ||
+                  details.description?.length > 150) && (
+                  <TouchableOpacity
+                    onPress={() => setDescriptionExpanded(!descriptionExpanded)}
+                    style={styles.moreButton}
+                  >
+                    <Text style={styles.moreButtonText}>Show Less</Text>
+                  </TouchableOpacity>
+                )}
             </View>
           )}
         </View>
@@ -470,7 +485,12 @@ export default function BookDetail({ route, navigation }) {
             style={[styles.tab, activeTab === 'author' && styles.activeTab]}
             onPress={() => setActiveTab('author')}
           >
-            <Text style={[styles.tabText, activeTab === 'author' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'author' && styles.activeTabText,
+              ]}
+            >
               {getTabTitle('author')}
             </Text>
           </TouchableOpacity>
@@ -478,7 +498,12 @@ export default function BookDetail({ route, navigation }) {
             style={[styles.tab, activeTab === 'aboutBook' && styles.activeTab]}
             onPress={() => setActiveTab('aboutBook')}
           >
-            <Text style={[styles.tabText, activeTab === 'aboutBook' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'aboutBook' && styles.activeTabText,
+              ]}
+            >
               {getTabTitle('aboutBook')}
             </Text>
           </TouchableOpacity>
@@ -486,7 +511,12 @@ export default function BookDetail({ route, navigation }) {
             style={[styles.tab, activeTab === 'moreInfo' && styles.activeTab]}
             onPress={() => setActiveTab('moreInfo')}
           >
-            <Text style={[styles.tabText, activeTab === 'moreInfo' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'moreInfo' && styles.activeTabText,
+              ]}
+            >
               {getTabTitle('moreInfo')}
             </Text>
           </TouchableOpacity>
@@ -503,7 +533,6 @@ export default function BookDetail({ route, navigation }) {
         )}
       </ScrollView>
 
-      {/* 위키 팝업 모달 - WebView 설치 후 주석 해제 필요 */}
       {wikiModalVisible && (
         <Modal
           visible={wikiModalVisible}
@@ -511,49 +540,60 @@ export default function BookDetail({ route, navigation }) {
           animationType="slide"
           onRequestClose={() => setWikiModalVisible(false)}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {wikiType === 'title' ? book.title : book.author}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setWikiModalVisible(false)}
-                style={styles.modalCloseButton}
-              >
-                <CloseIcon size={24} color="#000" />
-              </TouchableOpacity>
+          <View style={styles.modalOverlay}>
+            <View style={styles.topAdContainer}>
+              <Text style={styles.adText}>Banner Ad</Text>
             </View>
-            {/* WebView 설치 후 주석 해제 */}
-            {/* 
-            <WebView
-              source={{ uri: wikiUrl }}
-              style={styles.webView}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View style={styles.webViewLoading}>
-                  <ActivityIndicator size="large" color="#4285F4" />
-                </View>
-              )}
-            />
-            */}
-            {/* WebView가 없을 경우 임시로 외부 브라우저로 열기 */}
-            <View style={styles.webView}>
-              <Text style={styles.webViewPlaceholder}>
-                WebView를 사용하려면 react-native-webview를 설치하세요.
-              </Text>
-              <TouchableOpacity
-                style={styles.openBrowserButton}
-                onPress={async () => {
-                  try {
-                    await Linking.openURL(wikiUrl);
-                    setWikiModalVisible(false);
-                  } catch (error) {
-                    console.error('Error opening URL:', error);
-                  }
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  onPress={() => setWikiModalVisible(false)}
+                  style={styles.modalCloseButton}
+                >
+                  <CloseIcon size={24} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle} numberOfLines={1}>
+                  {wikiType === 'title' ? book.title : book.author}
+                </Text>
+                <View style={{ width: 32 }} />
+              </View>
+              <WebView
+                source={{
+                  uri: wikiUrl,
                 }}
-              >
-                <Text style={styles.openBrowserButtonText}>브라우저에서 열기</Text>
-              </TouchableOpacity>
+                style={styles.webView}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <View style={styles.webViewLoading}>
+                    <ActivityIndicator size="large" color="#4285F4" />
+                  </View>
+                )}
+                injectedJavaScript={`
+            (function() {
+              const adHtml = '<div style="width: 100%; height: 50px; background-color: #FFF9E6; display: flex; justify-content: center; align-items: center; border-top: 1px solid #E0E0E0; border-bottom: 1px solid #E0E0E0; position: sticky; top: 0; z-index: 9999;"><span style="color: #999; font-size: 14px; font-weight: 500;">Banner Ad</span></div>';
+              
+              function insertAd() {
+                const content = document.querySelector('#content') || document.querySelector('.mw-parser-output') || document.querySelector('body');
+                if (content && !document.querySelector('#custom-ad')) {
+                  const adDiv = document.createElement('div');
+                  adDiv.id = 'custom-ad';
+                  adDiv.innerHTML = adHtml;
+                  content.insertBefore(adDiv, content.firstChild);
+                }
+              }
+              
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', insertAd);
+              } else {
+                insertAd();
+              }
+              
+              setTimeout(insertAd, 500);
+              setTimeout(insertAd, 1000);
+            })();
+            true;
+          `}
+              />
             </View>
           </View>
         </Modal>
@@ -750,27 +790,46 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    height: '90%',
     backgroundColor: '#fff',
-    marginTop: 50,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     color: '#000',
     flex: 1,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
   modalCloseButton: {
     width: 32,
@@ -780,9 +839,6 @@ const styles = StyleSheet.create({
   },
   webView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
   webViewLoading: {
     position: 'absolute',
@@ -794,22 +850,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  webViewPlaceholder: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  openBrowserButton: {
-    backgroundColor: '#4285F4',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  topAdContainer: {
+    height: 60,
+    backgroundColor: '#FFF9E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 5,
     borderRadius: 8,
   },
-  openBrowserButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  adText: {
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '500',
   },
 });
-

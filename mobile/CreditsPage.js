@@ -23,7 +23,7 @@ export default function CreditsPage({ navigation }) {
         await Linking.openURL(url);
       }
     } catch (error) {
-      console.error('❌ Error opening URL:', error);
+      console.error('[Credits] Error opening URL:', error);
       alert(`링크를 열 수 없습니다: ${error.message}`);
     }
   };
@@ -200,7 +200,7 @@ export default function CreditsPage({ navigation }) {
           <View style={styles.specialThanksItem}>
             <Text style={styles.specialThanksLabel}>Special Thanks</Text>
             <Text style={styles.specialThanksValue}>
-              Hyangsook Lee, Ohkyung Kwon, Donna Lee, Daniel Joo, Joan Lee, Sam Kim, Jeff Kim, Cabbage Kim, Domi Kim
+              Hyangsook Lee, Ohkyung Kwon, Donna Lee, Daniel Joo, Joan Lee, Sam Kim, Jeff Kim, Cabbage Kim, Domi Kim, Junwoo Park
             </Text>
           </View>
         </View>

@@ -178,7 +178,7 @@ export default function BookDetail({ route, navigation }) {
           setAppLanguage(savedLanguage);
         }
       } catch (error) {
-        console.error('언어 설정 불러오기 실패:', error);
+        console.error('[BookDetail] Failed to load language:', error);
       }
     };
     loadAppLanguage();
@@ -264,13 +264,12 @@ export default function BookDetail({ route, navigation }) {
             }
           })
           .catch(err => {
-            console.error('❌ Detail Fetch Error (optional):', err);
+            // Optional detail fetch failed, continue without it
             // 에러가 나도 캐시 데이터는 이미 표시되므로 무시
           });
       }
     } else if (book.link) {
       // 캐시 데이터가 없고 link만 있는 경우 API 호출
-      console.log('📘 요청 URL:', book.link);
 
       const countryKey = country.toLowerCase();
       const detailUrl =
@@ -278,16 +277,14 @@ export default function BookDetail({ route, navigation }) {
         `${apiConfig.baseURL}/${config.apiEndpoint}`;
       fetch(`${detailUrl}?url=${encodeURIComponent(book.link)}`)
         .then(res => {
-          console.log('📘 응답 상태:', res.status);
           return res.json();
         })
         .then(data => {
-          console.log('📘 받은 데이터:', data);
           setDetails(data);
           setLoading(false);
         })
         .catch(err => {
-          console.error('❌ Detail Fetch Error:', err);
+          console.error('[BookDetail] Detail fetch error:', err.message);
           setLoading(false);
         });
     } else {
@@ -484,10 +481,10 @@ export default function BookDetail({ route, navigation }) {
                       if (canOpen) {
                         await Linking.openURL(book.link);
                       } else {
-                        console.error('Cannot open URL:', book.link);
+                        console.error('[BookDetail] Cannot open URL:', book.link);
                       }
                     } catch (error) {
-                      console.error('Error opening URL:', error);
+                      console.error('[BookDetail] Error opening URL:', error);
                     }
                   }}
                 >

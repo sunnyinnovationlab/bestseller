@@ -40,20 +40,14 @@ export default function SettingsPage({ navigation }) {
 
   const handleLinkPress = async (url) => {
     try {
-      console.log('🔗 Opening URL:', url);
       const supported = await Linking.canOpenURL(url);
-      console.log('🔗 Can open URL:', supported);
-      
       if (supported) {
         await Linking.openURL(url);
-        console.log('🔗 URL opened successfully');
       } else {
-        // canOpenURL이 false를 반환해도 직접 시도
-        console.log('🔗 canOpenURL returned false, trying anyway...');
         await Linking.openURL(url);
       }
     } catch (error) {
-      console.error('❌ Error opening URL:', error);
+      console.error('[Settings] Error opening URL:', error);
       // 사용자에게 알림을 표시할 수도 있음
       alert(`링크를 열 수 없습니다: ${error.message}`);
     }
@@ -209,7 +203,7 @@ export default function SettingsPage({ navigation }) {
                     try {
                       await AsyncStorage.setItem('appLanguage', languageName);
                     } catch (error) {
-                      console.error('언어 설정 저장 실패:', error);
+                        console.error('[Settings] Failed to save language:', error);
                     }
                   }}
                 >

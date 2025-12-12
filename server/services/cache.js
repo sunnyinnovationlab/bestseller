@@ -69,7 +69,7 @@ async function getBooksFromGoogleSheets(country) {
 
     return books;
   } catch (err) {
-    console.error(`❌ 구글닥스 읽기 오류 (${country}):`, err.message);
+    console.error(`[Cache] Google Sheets read error (${country}):`, err.message);
     throw err;
   }
 }
@@ -85,12 +85,10 @@ export async function getBooksFromCache(country) {
     const cacheKey = country;
     const cached = memoryCache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`✅ 메모리 캐시 사용 (${country}): ${cached.data.length}권`);
       return cached.data;
     }
 
     // 구글 시트에서 데이터 가져오기
-    console.log(`📘 구글닥스에서 데이터 가져오는 중 (${country})...`);
     const books = await getBooksFromGoogleSheets(country);
 
     // 메모리 캐시에 저장
@@ -98,11 +96,9 @@ export async function getBooksFromCache(country) {
       data: books,
       timestamp: Date.now(),
     };
-
-    console.log(`✅ 구글닥스 데이터 로드 성공 (${country}): ${books.length}권`);
     return books;
   } catch (err) {
-    console.error(`❌ Cache read error (${country}):`, err.message);
+    console.error(`[Cache] Read error (${country}):`, err.message);
     return [];
   }
 }

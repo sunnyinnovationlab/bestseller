@@ -1,84 +1,100 @@
 # Book Bestsellers
 
-**Book Bestsellers** is an app that provides weekly bestseller lists from multiple countries, including South Korea (KR), the United States (US), and Japan (JP). Users can easily access detailed information about each book, such as summaries and author profiles. Future features include bookmarking and translation options.
+**Book Bestsellers** is a mobile application that provides weekly bestseller lists from multiple countries. The app displays book information in both original and Korean languages, with support for dark mode and comprehensive book details.
 
 ---
 
 ## Key Features
 
-- **Country-specific Bestseller Lists**  
-  View the weekly bestseller lists for South Korea, the United States, and Japan.
+- **Multi-Country Bestseller Lists**  
+  View weekly bestseller lists for South Korea (KR), United States (US), Japan (JP), United Kingdom (UK), China (CH), Taiwan (TW), France (FR), and Spain (ES).
 
-- **Book Information**  
-  Access detailed book information such as summaries, author biographies, and more.
+- **Bilingual Support**  
+  Toggle between original language and Korean translations for book titles, authors, descriptions, and more.
 
-- **User-friendly Interface**  
-  An intuitive design to easily browse and explore the latest bestsellers from different countries.
+- **Dark Mode**  
+  Full dark mode theme support with custom color palette.
+
+- **Book Details**  
+  Access detailed book information including summaries, author biographies, and additional information.
+
+- **Bookmarking**  
+  Save your favorite books for quick access later.
+
+- **Settings & Credits**  
+  Customize app language, theme, and view credits and open source information.
 
 ---
 
 ## 📁 프로젝트 구조
 
+```
 bestseller/
-├── mobile/ # React Native 모바일 앱
-│ ├── android/ # Android 네이티브 코드
-│ ├── ios/ # iOS 네이티브 코드
-│ ├── App.js # 앱 진입점
-│ ├── MainScreen.js # 메인 화면 (국가별 탭, 북마크, 설정)
-│ ├── SplashPage.js # 스플래시 화면
-│ ├── Bookmark.js # 북마크 화면
-│ ├── SettingsPage.js # 설정 화면
-│ └── country/ # 국가별 상세 화면
-│ ├── krdetail.js
-│ ├── usdetail.js
-│ └── jpdetail.js
+├── mobile/                    # React Native 모바일 앱
+│   ├── android/               # Android 네이티브 코드
+│   ├── ios/                   # iOS 네이티브 코드
+│   ├── assets/                # 이미지 및 리소스
+│   ├── components/            # 재사용 가능한 컴포넌트
+│   ├── config/               # 설정 파일 (API, 버전)
+│   ├── App.js                # 앱 진입점
+│   ├── MainScreen.js         # 메인 화면 (국가별 탭, 북마크, 설정)
+│   ├── BookDetail.js         # 책 상세 정보 화면
+│   ├── Bookmark.js           # 북마크 화면
+│   ├── SettingsPage.js       # 설정 화면
+│   ├── CreditsPage.js        # 크레딧 페이지
+│   ├── OpenSourceInfoPage.js # 오픈소스 정보 페이지
+│   ├── SplashPage.js         # 스플래시 화면
+│   ├── ThemeContext.js       # 다크 모드 테마 컨텍스트
+│   ├── LanguageContext.js    # 언어 컨텍스트
+│   └── BookmarkContext.js    # 북마크 컨텍스트
 │
-├── server/ # Express API 서버
-│ ├── index.js # 서버 진입점
-│ ├── routes/ # API 라우트
-│ │ ├── books.js # 책 목록 API
-│ │ └── bookDetail.js # 책 상세 정보 API
-│ └── services/ # 서비스 레이어
-│ └── cache.js # JSON 캐시 읽기
+├── server/                    # Express API 서버
+│   ├── index.js              # 서버 진입점
+│   ├── routes/               # API 라우트
+│   │   ├── books.js          # 책 목록 API
+│   │   └── bookDetail.js     # 책 상세 정보 API
+│   ├── services/             # 서비스 레이어
+│   │   └── cache.js          # 구글 시트 캐시 서비스
+│   └── start-server.bat      # 서버 시작 스크립트 (Windows)
 │
-└── backend/ # 배치 크롤러
-├── scrappers/ # Puppeteer 크롤러
-│ ├── aladinScrapper.js # 한국 (알라딘)
-│ ├── kyoboScrapper.js # 한국 (교보문고)
-│ ├── amazonScrapper.js # 미국/프랑스 (Amazon)
-│ └── taiwanScrapper.js # 대만
-└── json_results/ # 크롤링 결과 JSON 파일
-├── aladin.json
-├── kyobo.json
-├── amazon.json
-├── taiwan.json
-└── gibert.json # 일본
-
+└── backend/                  # 배치 크롤러 (선택사항)
+    ├── scrappers/           # Puppeteer 크롤러
+    └── json_results/        # 크롤링 결과 JSON 파일
+```
 
 ---
 
 ## ✨ 주요 기능
 
 ### 📚 국가별 베스트셀러
-- **한국 (KOR)**: 알라딘 베스트셀러
-- **일본 (JPN)**: 기노쿠니야 베스트셀러
-- **미국 (USA)**: Amazon 베스트셀러
-- **대만 (TWN)**: Books.com.tw 베스트셀러
-- **프랑스 (FRA)**: Amazon.fr 베스트셀러
+- **한국 (KOR)**: Google Sheets 데이터
+- **일본 (JPN)**: Google Sheets 데이터
+- **미국 (USA)**: Google Sheets 데이터
+- **영국 (GBR)**: Google Sheets 데이터
+- **중국 (CHN)**: Google Sheets 데이터
+- **대만 (TPE)**: Google Sheets 데이터
+- **프랑스 (FRA)**: Google Sheets 데이터
+- **스페인 (ESP)**: Google Sheets 데이터
 
 ### 📖 책 상세 정보
 - 책 소개, 줄거리, 저자 정보
 - 목차 (Table of Contents)
 - 출판사 리뷰
 - 원본 사이트 링크
+- 이미지 확대 기능
+- 위키피디아 연동
 
 ### 🔖 북마크
 - 관심 있는 책을 북마크로 저장
 - AsyncStorage를 사용한 로컬 저장
-- 북마크 화면에서 관리
+- 북마크 화면에서 관리 및 정렬
 
 ### ⚙️ 설정
-- 다크 모드 (준비 중)
+- 다국어 지원 (한국어, 영어, 일본어, 중국어, 대만어, 프랑스어, 스페인어)
+- 다크 모드 / 라이트 모드 전환
+- 소셜 미디어 링크 (Instagram, X/Twitter)
+- 앱 버전 정보
+- 크레딧 및 오픈소스 정보
 
 ---
 
@@ -92,43 +108,51 @@ bestseller/
 
 ### 1. 서버 실행
 
+```bash
 cd server
 npm install
-npm start서버는 `http://localhost:4000`에서 실행됩니다.
+npm start
+```
+
+서버는 `http://localhost:4000`에서 실행됩니다.
 
 **API 엔드포인트:**
 - `GET /kr-books` - 한국 베스트셀러
-- `GET /jp-books` - 일본 베스트셀러
 - `GET /us-books` - 미국 베스트셀러
+- `GET /jp-books` - 일본 베스트셀러
+- `GET /uk-books` - 영국 베스트셀러
+- `GET /ch-books` - 중국 베스트셀러
 - `GET /tw-books` - 대만 베스트셀러
 - `GET /fr-books` - 프랑스 베스트셀러
-- `GET /kr-book-detail?url=...` - 책 상세 정보
+- `GET /es-books` - 스페인 베스트셀러
+- `GET /kr-book-detail?url=...` - 책 상세 정보 (각 국가별)
 
 ### 2. 모바일 앱 실행
 
+```bash
 cd mobile
-npm install react-native-google-mobile-ads
+npm install
 npm run android  # Android
-
-- on android device
-adb devices  -shows connected devices
-
-
 # 또는
-npm run ios      # iOS### 3. 배치 크롤러 실행 (선택사항)
+npm run ios      # iOS
+```
 
-주기적으로 최신 베스트셀러 데이터를 수집하려면:
+**Android 디바이스 연결 시:**
+```bash
+adb devices  # 연결된 디바이스 확인
+adb reverse tcp:8081 tcp:8081  # Metro 번들러 포트 포워딩
+```
 
-크롤링 결과는 `backend/json_results/`에 JSON 파일로 저장되며, 서버는 이 파일을 우선적으로 사용합니다.
-cd backend/scrappers
-node aladinScrapper.js    # 한국 (알라딘)
-node kyoboScrapper.js     # 한국 (교보문고)
-node usScrapper.js        # 미국
-node japanScrapper.js     #
-node ukScrapper.js        #
-node chinaScrapper.js     #
-node taiwanScrapper.js    # 대만
-node franceScrapper.js    # 프랑스
+### 3. APK 빌드
+
+```bash
+cd mobile/android
+./gradlew.bat assembleRelease  # Windows
+# 또는
+./gradlew assembleRelease      # macOS/Linux
+```
+
+APK 파일은 `mobile/android/app/build/outputs/apk/release/app-release.apk`에 생성됩니다.
 
 ---
 
@@ -139,40 +163,52 @@ node franceScrapper.js    # 프랑스
 - **React Navigation** - 화면 네비게이션
 - **React Native Vector Icons** - 아이콘
 - **AsyncStorage** - 로컬 데이터 저장
+- **React Native WebView** - 웹 콘텐츠 표시
+- **React Native Google Mobile Ads** - 광고 통합
 
 ### Server
 - **Express** 5.1.0 - REST API 서버
-- **Puppeteer** - 실시간 크롤링 (폴백)
-- **Cheerio** - HTML 파싱
+- **Axios** - HTTP 클라이언트
+- **csv-parse** - CSV/TSV 파싱
+- **Puppeteer** - 책 상세 정보 크롤링 (선택사항)
 
-### Backend
-- **Puppeteer** - 배치 크롤링
-- **Puppeteer Extra + Stealth Plugin** - 봇 탐지 회피
+### Data Source
+- **Google Sheets** - 메인 데이터 소스
+- **24시간 메모리 캐시** - 성능 최적화
 
 ---
 
 ## 📊 데이터 흐름
 
-1. **배치 크롤링**: `backend/scrappers/`의 스크립트가 주기적으로 실행되어 `backend/json_results/`에 JSON 저장
-2. **API 요청**: 모바일 앱이 `server/`의 Express API 호출
-3. **캐시 우선**: 서버는 `backend/json_results/`의 JSON 파일을 우선 사용
-4. **실시간 폴백**: 캐시가 없으면 Puppeteer로 실시간 크롤링
+1. **Google Sheets**: 메인 데이터 소스로 Google Sheets에서 TSV 형식으로 데이터 가져오기
+2. **메모리 캐시**: 24시간 TTL을 가진 메모리 캐시로 성능 최적화
+3. **API 요청**: 모바일 앱이 `server/`의 Express API 호출
+4. **책 상세 정보**: 필요 시 Puppeteer를 사용하여 실시간 크롤링 (선택사항)
 
 ---
 
 ## 📝 참고사항
 
-- 서버는 `backend/json_results/`의 JSON 파일을 우선적으로 사용합니다
-- 캐시가 없을 경우에만 실시간 크롤링을 수행합니다
+- 서버는 Google Sheets에서 데이터를 읽어옵니다
+- 24시간 메모리 캐시를 사용하여 성능을 최적화합니다
 - 모바일 앱은 Android 에뮬레이터에서 `10.0.2.2:4000`으로 서버에 접속합니다
 - 북마크 데이터는 AsyncStorage에 로컬로 저장됩니다
-- 구글 클라우드/API 사용시 credentials.json 추가 필요
+- 다크 모드는 앱 전체에 적용됩니다
+- 한국어 토글은 모든 국가 탭에서 유지됩니다
 
 ---
 
 ## 🔮 향후 계획
 
-- [ ] 다크 모드 완전 구현
+- [x] 다크 모드 완전 구현
+- [x] 다국어 지원
+- [x] 크레딧 및 오픈소스 정보 페이지
 - [ ] Google Cloud 배포
 - [ ] 자동 크롤링 스케줄러
-- [ ] 다국어 지원
+- [ ] 추가 국가 지원
+
+---
+
+## 📄 라이선스
+
+이 프로젝트는 개인 프로젝트입니다.

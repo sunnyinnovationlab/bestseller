@@ -65,7 +65,7 @@ export const LanguageProvider = ({ children }) => {
         const labelsRow = rows[22] ?? [];
         setLanguageLabels(labelsRow);
       } catch (err) {
-        console.error('Failed to load translations', err);
+        console.error('[Language] Failed to load translations:', err.message);
       }
     };
     loadTranslations();

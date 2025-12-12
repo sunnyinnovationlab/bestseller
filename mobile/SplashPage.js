@@ -67,7 +67,7 @@ export default function SplashPage({ navigation }) {
           setLanguage(languageMap[savedLanguage] || 'english');
         }
       } catch (error) {
-        console.error('언어 설정 불러오기 실패:', error);
+        console.error('[SplashPage] Failed to load language:', error);
       }
     };
     loadLanguage();

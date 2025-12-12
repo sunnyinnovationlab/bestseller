@@ -18,7 +18,7 @@ export const BookmarkProvider = ({ children }) => {
         setBookmarks(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('북마크 불러오기 실패:', error);
+      console.error('[Bookmark] Failed to load bookmarks:', error);
     }
   };
 
@@ -28,7 +28,7 @@ export const BookmarkProvider = ({ children }) => {
       await AsyncStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
       setBookmarks(newBookmarks);
     } catch (error) {
-      console.error('북마크 저장 실패:', error);
+      console.error('[Bookmark] Failed to save bookmarks:', error);
     }
   };
 

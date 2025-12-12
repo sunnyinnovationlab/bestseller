@@ -20,23 +20,25 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📚 Books API:`);
-  console.log(`   - KR: http://localhost:${PORT}/kr-books`);
-  console.log(`   - US: http://localhost:${PORT}/us-books`);
-  console.log(`   - JP: http://localhost:${PORT}/jp-books`);
-  console.log(`   - UK: http://localhost:${PORT}/uk-books`);
-  console.log(`   - CH: http://localhost:${PORT}/ch-books`);
-  console.log(`   - TW: http://localhost:${PORT}/tw-books`);
-  console.log(`   - FR: http://localhost:${PORT}/fr-books`);
-  console.log(`📖 Book Detail API:`);
-  console.log(`   - KR: http://localhost:${PORT}/kr-book-detail`);
-  console.log(`   - US: http://localhost:${PORT}/us-book-detail`);
-  console.log(`   - JP: http://localhost:${PORT}/jp-book-detail`);
-  console.log(`   - UK: http://localhost:${PORT}/uk-book-detail`);
-  console.log(`   - CH: http://localhost:${PORT}/ch-book-detail`);
-  console.log(`   - TW: http://localhost:${PORT}/tw-book-detail`);
-  console.log(`   - FR: http://localhost:${PORT}/fr-book-detail`);
+const server = app.listen(PORT, () => {
+  console.log(`[Server] Running on port ${PORT}`);
+  console.log(`[Server] Books API: /kr-books, /us-books, /jp-books, /uk-books, /ch-books, /tw-books, /fr-books, /es-books`);
+  console.log(`[Server] Book Detail API: /kr-book-detail, /us-book-detail, /jp-book-detail, /uk-book-detail, /ch-book-detail, /tw-book-detail, /fr-book-detail, /es-book-detail`);
+});
+
+// Keep server running
+process.on('SIGTERM', () => {
+  console.log('[Server] SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('[Server] Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('[Server] SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('[Server] Process terminated');
+    process.exit(0);
+  });
 });
 

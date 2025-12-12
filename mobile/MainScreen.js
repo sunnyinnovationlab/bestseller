@@ -140,7 +140,7 @@ export default function MainScreen({ navigation }) {
           setLanguage(savedLanguage);
         }
       } catch (error) {
-        console.error('언어 토글 설정 불러오기 실패:', error);
+        console.error('[MainScreen] Failed to load language toggle:', error);
       }
     };
     loadLanguageToggle();
@@ -152,7 +152,7 @@ export default function MainScreen({ navigation }) {
     try {
       await AsyncStorage.setItem('bookLanguageToggle', newLanguage);
     } catch (error) {
-      console.error('언어 토글 설정 저장 실패:', error);
+      console.error('[MainScreen] Failed to save language toggle:', error);
     }
   };
 
@@ -165,7 +165,7 @@ export default function MainScreen({ navigation }) {
           setAppLanguage(savedLanguage);
         }
       } catch (error) {
-        console.error('언어 설정 불러오기 실패:', error);
+        console.error('[MainScreen] Failed to load app language:', error);
       }
     };
     loadAppLanguage();
@@ -211,7 +211,7 @@ export default function MainScreen({ navigation }) {
         setBooks(data.books || []);
         setLoading(false);
       } catch (err) {
-        console.error('❌ Fetch Error:', err);
+        console.error('[MainScreen] Fetch error:', err.message);
         setLoading(false);
       }
     };

@@ -48,7 +48,7 @@ export default function OpenSourceInfoPage({ navigation }) {
         await Linking.openURL(url);
       }
     } catch (error) {
-      console.error('❌ Error opening URL:', error);
+      console.error('[OpenSourceInfo] Error opening URL:', error);
       alert(`링크를 열 수 없습니다: ${error.message}`);
     }
   };

@@ -35,7 +35,7 @@ export const ThemeProvider = ({ children }) => {
           setTheme(savedTheme);
         }
       } catch (error) {
-        console.error('테마 설정 불러오기 실패:', error);
+        console.error('[Theme] Failed to load theme:', error);
       }
     };
     loadTheme();
@@ -46,7 +46,7 @@ export const ThemeProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem('appTheme', newTheme);
     } catch (error) {
-      console.error('테마 설정 저장 실패:', error);
+      console.error('[Theme] Failed to save theme:', error);
     }
   };
 

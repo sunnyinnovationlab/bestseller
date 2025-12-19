@@ -15,9 +15,9 @@ const sheetGidMap = {
   ch: '225038494', // CHINA
 };
 
-// 메모리 캐시 (24시간 TTL)
+// 메모리 캐시 (7일 TTL - 일주일 단위 업데이트)
 const memoryCache = {};
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7일
 
 /**
  * 구글 시트에서 책 데이터 읽기

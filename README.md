@@ -108,6 +108,8 @@ bestseller/
 
 ### 1. 서버 실행
 
+#### 로컬 개발
+
 ```bash
 cd server
 npm install
@@ -115,6 +117,34 @@ npm start
 ```
 
 서버는 `http://localhost:4000`에서 실행됩니다.
+
+#### Google Cloud Run 배포
+
+자세한 배포 가이드는 `server/DEPLOY.md`를 참고하세요.
+
+**빠른 배포:**
+```bash
+cd server
+
+# Windows
+deploy.bat
+
+# macOS/Linux
+chmod +x deploy.sh
+./deploy.sh
+```
+
+**수동 배포:**
+```bash
+cd server
+gcloud run deploy bestseller-server \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 2Gi \
+  --cpu 2
+```
 
 **API 엔드포인트:**
 - `GET /kr-books` - 한국 베스트셀러

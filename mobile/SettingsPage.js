@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Linking,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -287,9 +288,7 @@ export default function SettingsPage({ navigation }) {
         <TouchableOpacity
           style={dynamicStyles.settingItem}
           activeOpacity={0.7}
-          onPress={() => {
-            // TODO: 나중에 내용 추가
-          }}
+          onPress={() => navigation.navigate('SunnyGamesApps')}
         >
           <Text style={dynamicStyles.settingLabel}>Sunny's Games and Apps</Text>
           <Icon name="chevron-right" size={24} color={colors.secondaryText} />
@@ -324,6 +323,31 @@ export default function SettingsPage({ navigation }) {
         <View style={styles.adContainer}>
           <MyAds type="adaptive" size={BannerAdSize.BANNER} />
         </View>
+
+        {/* Footer with Logo and Links */}
+        <View style={[styles.footer, { backgroundColor: colors.primaryBackground }]}>
+          <View style={styles.logoContainer}>
+            <TouchableOpacity
+              onPress={() => handleLinkPress('https://sunnyinnolab.com')}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74')}>
+              <Text style={[styles.footerLink, { color: colors.link }]}>Terms of Service</Text>
+            </TouchableOpacity>
+            <View style={[styles.footerDivider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Privacy-Policy-ced8ead72ced4d8791ca4a71a289dd6b')}>
+              <Text style={[styles.footerLink, { color: colors.link }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -338,6 +362,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 30,
     marginBottom: 20
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
+    marginTop: 20,
+  },
+  logoContainer: {
+    alignItems: 'flex-start',
+    flex: 1,
+    height: 144,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    height: 144,
+    width: 120,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 16,
+    flex: 1,
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  footerDivider: {
+    width: 1,
+    height: 14,
   },
   scrollView: {
     flex: 1,

@@ -194,6 +194,7 @@ export default function MainScreen({ navigation }) {
   }, []);
 
   const { isBookmarked, toggleBookmark } = useBookmark();
+  const { colors, isDark } = useTheme();
   const {
     country,
     setCountry,
@@ -216,6 +217,7 @@ export default function MainScreen({ navigation }) {
     let order = ['KOR', 'USA', 'JPN', 'GBR', 'CHN', 'TPE', 'FRA', 'ESP'];
     
     if (userLanguage === 1) { // English
+      // 영어에서는 FRA 다음에 ESP 위치
       order = ['USA', 'GBR', 'KOR', 'JPN', 'CHN', 'TPE', 'FRA', 'ESP'];
     } else if (userLanguage === 2) { // Japanese
       order = ['JPN', 'USA', 'KOR', 'GBR', 'CHN', 'TPE', 'FRA', 'ESP'];
@@ -226,7 +228,11 @@ export default function MainScreen({ navigation }) {
     } else if (userLanguage === 5) { // French
       order = ['FRA', 'USA', 'GBR', 'KOR', 'JPN', 'CHN', 'TPE', 'ESP'];
     } else if (userLanguage === 6) { // Spanish
+      // 스페인어일 때는 스페인을 제일 앞에 위치
       order = ['ESP', 'USA', 'GBR', 'KOR', 'JPN', 'CHN', 'TPE', 'FRA'];
+    } else {
+      // 지원하지 않는 언어에서는 FRA 다음에 ESP 위치
+      order = ['KOR', 'USA', 'JPN', 'GBR', 'CHN', 'TPE', 'FRA', 'ESP'];
     }
 
     return order.map(label => COUNTRY_TABS.find(tab => tab.label === label));
@@ -235,12 +241,13 @@ export default function MainScreen({ navigation }) {
   const books = useMemo(
     () =>
       filteredData.map(row => ({
-        image: row[0] || '',
-        title: row[1] || '',
-        author: row[2] || '',
-        authorInfo: row[3] || '',
-        description: row[4] || '',
-        moreInfo: row[5] || '',
+        image: row[0] || '', // B행: 이미지 URL
+        link: row[1] || '', // C행: View on Store URL
+        title: row[2] || '',
+        author: row[3] || '',
+        authorInfo: row[4] || '',
+        description: row[5] || '', // G행: 도서정보
+        moreInfo: row[6] || '', // H행: 상세정보
       })),
     [filteredData]
   );
@@ -264,6 +271,21 @@ export default function MainScreen({ navigation }) {
     if (typeof nextIndex === 'number') {
       setCountry(nextIndex);
     }
+  };
+
+  // 나라 이름 번역 가져오기
+  const getCountryName = (countryLabel) => {
+    const languageMap = {
+      0: 'korean',
+      1: 'english',
+      2: 'japanese',
+      3: 'chinese',
+      4: 'traditionalChinese',
+      5: 'french',
+      6: 'spanish',
+    };
+    const langKey = languageMap[userLanguage] || 'english';
+    return countryTranslations[langKey]?.[countryLabel] || countryLabel;
   };
 
   // 📚 책 아이템 렌더링
@@ -294,7 +316,7 @@ export default function MainScreen({ navigation }) {
 
     return (
       <TouchableOpacity
-        style={styles.bookItem}
+        style={[styles.bookItem, { borderBottomColor: colors.border }]}
         onPress={() => {
           navigation.navigate(getDetailScreen(), {
             book: {
@@ -310,38 +332,42 @@ export default function MainScreen({ navigation }) {
               authorInfo: item.authorInfo,
               publisherReview: item.publisherReview,
               plot: item.plot,
-              other: item.moreInfo,
+              moreInfo: item.moreInfo, // H행: 상세정보
+              // 한국어 필드
+              description_kr: item.description_kr,
+              authorInfo_kr: item.authorInfo_kr,
+              moreInfo_kr: item.moreInfo_kr,
               rank: index + 1,
             },
           });
         }}
       >
         <View style={styles.rankContainer}>
-          <Text style={styles.rank}>{index + 1}</Text>
+          <Text style={[styles.rank, { color: colors.text }]}>{index + 1}</Text>
         </View>
 
         {item.image ? (
           <Image source={{ uri: item.image }} style={styles.bookImage} />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderText}>No Image</Text>
+          <View style={[styles.imagePlaceholder, { backgroundColor: colors.secondaryBackground }]}>
+            <Text style={[styles.placeholderText, { color: colors.secondaryText }]}>No Image</Text>
           </View>
         )}
 
         <View style={styles.bookInfo}>
-          <Text style={styles.bookTitle} numberOfLines={2}>
+          <Text style={[styles.bookTitle, { color: colors.text }]} numberOfLines={2}>
             {item.title}
           </Text>
-          <Text style={styles.bookAuthor} numberOfLines={1}>
+          <Text style={[styles.bookAuthor, { color: colors.secondaryText }]} numberOfLines={1}>
             {item.author || 'Unknown Author'}
           </Text>
           {item.publisher && (
-            <Text style={styles.bookMeta} numberOfLines={1}>
+            <Text style={[styles.bookMeta, { color: colors.secondaryText }]} numberOfLines={1}>
               {item.publisher} {item.genre ? `• ${item.genre}` : ''}
             </Text>
           )}
           {item.description && (
-            <Text style={styles.bookDescription} numberOfLines={2}>
+            <Text style={[styles.bookDescription, { color: colors.secondaryText }]} numberOfLines={2}>
               {item.description}
             </Text>
           )}
@@ -364,7 +390,11 @@ export default function MainScreen({ navigation }) {
               authorInfo: item.authorInfo,
               publisherReview: item.publisherReview,
               plot: item.plot,
-              other: item.moreInfo,
+              moreInfo: item.moreInfo, // H행: 상세정보
+              // 한국어 필드
+              description_kr: item.description_kr,
+              authorInfo_kr: item.authorInfo_kr,
+              moreInfo_kr: item.moreInfo_kr,
             };
             toggleBookmark(bookData);
           }}
@@ -372,7 +402,7 @@ export default function MainScreen({ navigation }) {
           <Icon
             name={isBookmarked(item.title) ? 'star' : 'star-outline'}
             size={24}
-            color={isBookmarked(item.title) ? '#FFD700' : '#999'}
+            color={isBookmarked(item.title) ? '#FFD700' : colors.secondaryText}
           />
         </TouchableOpacity>
       </TouchableOpacity>
@@ -386,7 +416,7 @@ export default function MainScreen({ navigation }) {
 
     if (error) {
       return (
-        <View style={styles.center}>
+        <View style={[styles.center, { backgroundColor: colors.primaryBackground }]}>
           <Text style={{ color: '#d32f2f', marginBottom: 12 }}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchSheets}>
             <Text style={styles.retryText}>다시 시도</Text>
@@ -399,18 +429,18 @@ export default function MainScreen({ navigation }) {
 
     if (!visibleBooks.length) {
       return (
-        <View style={styles.center}>
-          <Text style={{ color: '#666' }}>표시할 데이터가 없습니다.</Text>
+        <View style={[styles.center, { backgroundColor: colors.primaryBackground }]}>
+          <Text style={{ color: colors.secondaryText }}>표시할 데이터가 없습니다.</Text>
         </View>
       );
     }
 
     return (
-      <View style={styles.homeContainer}>
+      <View style={[styles.homeContainer, { backgroundColor: colors.primaryBackground }]}>
         {/* 상단 헤더 */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Best Sellers</Text>
-          <View style={styles.languageToggle}>
+        <View style={[styles.header, { backgroundColor: colors.primaryBackground, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Best Sellers</Text>
+          <View style={[styles.languageToggle, { backgroundColor: colors.secondaryBackground, borderColor: colors.border }]}>
             <TouchableOpacity
               style={[
                 styles.languageOption,
@@ -425,6 +455,7 @@ export default function MainScreen({ navigation }) {
             >
               <Text style={[
                 styles.languageText,
+                { color: language === (userLanguage + 1) ? '#fff' : colors.secondaryText },
                 language === (userLanguage + 1) && styles.languageTextActive
               ]}>
               {userLanguageLabel}
@@ -444,6 +475,7 @@ export default function MainScreen({ navigation }) {
             >
               <Text style={[
                 styles.languageText,
+                { color: language === 0 ? '#fff' : colors.secondaryText },
                 language === 0 && styles.languageTextActive
               ]}>
               {originalLabel}
@@ -453,7 +485,7 @@ export default function MainScreen({ navigation }) {
         </View>
 
         {/* 국가 선택 탭 */}
-        <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0' }}>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -462,13 +494,17 @@ export default function MainScreen({ navigation }) {
             {orderedCountryTabs.map(tab => (
               <TouchableOpacity
                 key={tab.label}
-                style={[styles.countryTab, activeCountryTab === tab.label && styles.activeCountryTab]}
+                style={[styles.countryTab, activeCountryTab === tab.label && [styles.activeCountryTab, { borderBottomColor: colors.link }]]}
                 onPress={() => setCountryByLabel(tab.label)}
               >
                 <Text
-                  style={[styles.countryTabText, activeCountryTab === tab.label && styles.activeCountryTabText]}
+                  style={[
+                    styles.countryTabText,
+                    { color: activeCountryTab === tab.label ? colors.link : colors.secondaryText },
+                    activeCountryTab === tab.label && styles.activeCountryTabText
+                  ]}
                 >
-                  {tab.label}
+                  {getCountryName(tab.label)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -509,14 +545,48 @@ export default function MainScreen({ navigation }) {
     }
   };
 
+  // 동적 스타일 생성
+  const dynamicStyles = useMemo(() => ({
+    container: {
+      flex: 1,
+      backgroundColor: colors.primaryBackground,
+    },
+    contentContainer: {
+      flex: 1,
+      paddingBottom: 80,
+    },
+    bottomNav: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      paddingVertical: 15,
+      paddingBottom: 25,
+      backgroundColor: colors.primaryBackground,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      zIndex: 1000,
+    },
+    navLabel: {
+      fontSize: 12,
+      color: colors.secondaryText,
+    },
+    activeNavLabel: {
+      color: colors.link,
+      fontWeight: 'bold',
+    },
+  }), [colors]);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.contentContainer}>
+    <View style={dynamicStyles.container}>
+      <View style={dynamicStyles.contentContainer}>
         {renderContent()}
       </View>
       
       {/* 하단 네비게이션 */}
-      <View style={styles.bottomNav}>
+      <View style={dynamicStyles.bottomNav}>
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => setActiveTab('home')}
@@ -524,9 +594,9 @@ export default function MainScreen({ navigation }) {
           <Icon 
             name="home-outline" 
             size={24} 
-            color={activeTab === 'home' ? '#4285F4' : '#666'} 
+            color={activeTab === 'home' ? colors.link : colors.secondaryText} 
           />
-          <Text style={[styles.navLabel, activeTab === 'home' && styles.activeNavLabel]}>
+          <Text style={[dynamicStyles.navLabel, activeTab === 'home' && dynamicStyles.activeNavLabel]}>
             Home
           </Text>
         </TouchableOpacity>
@@ -537,9 +607,9 @@ export default function MainScreen({ navigation }) {
           <Icon 
             name="bookmark-outline" 
             size={24} 
-            color={activeTab === 'bookmark' ? '#4285F4' : '#666'} 
+            color={activeTab === 'bookmark' ? colors.link : colors.secondaryText} 
           />
-          <Text style={[styles.navLabel, activeTab === 'bookmark' && styles.activeNavLabel]}>
+          <Text style={[dynamicStyles.navLabel, activeTab === 'bookmark' && dynamicStyles.activeNavLabel]}>
             Bookmarks
           </Text>
         </TouchableOpacity>
@@ -550,9 +620,9 @@ export default function MainScreen({ navigation }) {
           <Icon 
             name="cog-outline" 
             size={24} 
-            color={activeTab === 'settings' ? '#4285F4' : '#666'} 
+            color={activeTab === 'settings' ? colors.link : colors.secondaryText} 
           />
-          <Text style={[styles.navLabel, activeTab === 'settings' && styles.activeNavLabel]}>
+          <Text style={[dynamicStyles.navLabel, activeTab === 'settings' && dynamicStyles.activeNavLabel]}>
             Settings
           </Text>
         </TouchableOpacity>
@@ -564,7 +634,6 @@ export default function MainScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   contentContainer: {
     flex: 1,
@@ -572,13 +641,11 @@ const styles = StyleSheet.create({
   },
   homeContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
   retryButton: {
     backgroundColor: '#4285F4',
@@ -597,22 +664,17 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
   },
   languageToggle: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 2,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
   },
   languageOption: {
     paddingHorizontal: 16,
@@ -651,11 +713,9 @@ const styles = StyleSheet.create({
   },
   countryTabText: {
     fontSize: 16,
-    color: '#666',
     fontWeight: '500',
   },
   activeCountryTabText: {
-    color: '#4285F4',
     fontWeight: 'bold',
   },
   listContainer: {
@@ -667,7 +727,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   rankContainer: {
     width: 30,
@@ -677,7 +736,6 @@ const styles = StyleSheet.create({
   rank: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
   },
   bookImage: {
     width: 80,
@@ -689,14 +747,12 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: 80,
     height: 120,
-    backgroundColor: '#E0E0E0',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   placeholderText: {
-    color: '#999',
     fontSize: 12,
   },
   bookInfo: {
@@ -706,23 +762,19 @@ const styles = StyleSheet.create({
   bookTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 5,
     lineHeight: 22,
   },
   bookAuthor: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   bookMeta: {
     fontSize: 12,
-    color: '#999',
     marginBottom: 8,
   },
   bookDescription: {
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
   bookmarkIcon: {
@@ -730,29 +782,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 15,
-    paddingBottom: 25,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    zIndex: 1000,
-  },
   navItem: {
     alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  activeNavLabel: {
-    color: '#4285F4',
-    fontWeight: 'bold',
   },
 });

@@ -33,48 +33,56 @@ import { BannerAdSize } from 'react-native-google-mobile-ads';
 // Row 30: Author
 // Row 31: About Book
 // Row 32: More Info
+// Row 39: No Information
 const translations = {
   korean: {
     viewOnStore: '스토어 방문', // Row 29, Column A
     author: '저자', // Row 30, Column A
     aboutBook: '도서 정보', // Row 31, Column A
     moreInfo: '상세 정보', // Row 32, Column A
+    noInformation: '정보 없음', // Row 39, Column A
   },
   english: {
     viewOnStore: 'View on Store', // Row 29, Column B
     author: 'Author', // Row 30, Column B
     aboutBook: 'About Book', // Row 31, Column B
     moreInfo: 'More Info', // Row 32, Column B
+    noInformation: 'No Information', // Row 39, Column B
   },
   japanese: {
     viewOnStore: 'ストアで見る', // Row 29, Column C
     author: '著者', // Row 30, Column C
     aboutBook: '書籍情報', // Row 31, Column C
     moreInfo: '詳細情報', // Row 32, Column C
+    noInformation: '情報なし', // Row 39, Column C
   },
   chinese: {
     viewOnStore: '前往商店', // Row 29, Column D
     author: '作者', // Row 30, Column D
     aboutBook: '图书信息', // Row 31, Column D
     moreInfo: '细节', // Row 32, Column D
+    noInformation: '无信息', // Row 39, Column D
   },
   traditionalChinese: {
     viewOnStore: '查看店鋪', // Row 29, Column E
     author: '作者', // Row 30, Column E
     aboutBook: '關於本書', // Row 31, Column E
     moreInfo: '更多資訊', // Row 32, Column E
+    noInformation: '無資訊', // Row 39, Column E
   },
   french: {
     viewOnStore: 'Voir en magasin', // Row 29, Column F
     author: 'auteur', // Row 30, Column F
     aboutBook: 'Informations sur le livre', // Row 31, Column F
     moreInfo: "Plus d'informations", // Row 32, Column F
+    noInformation: 'Aucune information', // Row 39, Column F
   },
   spanish: {
     viewOnStore: 'Ver en la tienda',
     author: 'Autor',
     aboutBook: 'Sobre el libro',
     moreInfo: 'Más información',
+    noInformation: 'Sin información', // Row 39, Column G
   },
 };
 
@@ -135,6 +143,53 @@ export default function BookDetail({ route, navigation }) {
   const [wikiUrl, setWikiUrl] = useState('');
   const [wikiType, setWikiType] = useState('');
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // 이미지 URL을 고해상도로 변환하고 정리하는 함수
+  const getHighResImageUrl = (imageUrl) => {
+    if (!imageUrl || !imageUrl.trim()) return imageUrl;
+    
+    let cleanedUrl = imageUrl.trim();
+    
+    // Amazon 이미지 URL의 잘못된 형식 수정
+    // 예: _AC_UL600_SR600,400_ -> _AC_SL1500_ (고해상도)
+    // 예: _AC_UL320_ -> _AC_SL1500_
+    // 잘못된 쉼표가 포함된 SR 파라미터를 SL로 변경
+    cleanedUrl = cleanedUrl.replace(/_SR(\d+),(\d+)_/g, '_SL1500_');
+    cleanedUrl = cleanedUrl.replace(/_AC_UL\d+_SR\d+,\d+_/g, '_AC_SL1500_');
+    cleanedUrl = cleanedUrl.replace(/_AC_UL\d+_/g, '_AC_SL1500_');
+    cleanedUrl = cleanedUrl.replace(/_AC_SR\d+,\d+_/g, '_AC_SL1500_');
+    // 기존 크기 제한을 더 큰 크기로 변경 (하지만 원본이 더 나을 수 있으므로 주의)
+    // cleanedUrl = cleanedUrl.replace(/_SL\d+_/g, '_SL1500_');
+    
+    // 이미지 URL에서 쿼리 파라미터나 크기 제한을 제거하여 원본 이미지 사용
+    // 일부 이미지 서비스는 URL 파라미터로 크기를 제한하므로 이를 제거
+    try {
+      const url = new URL(cleanedUrl);
+      // 크기 제한 파라미터 제거
+      url.searchParams.delete('w');
+      url.searchParams.delete('h');
+      url.searchParams.delete('width');
+      url.searchParams.delete('height');
+      url.searchParams.delete('size');
+      url.searchParams.delete('resize');
+      // 고해상도 파라미터 추가 (지원하는 경우)
+      if (!url.searchParams.has('quality')) {
+        url.searchParams.set('quality', '100');
+      }
+      return url.toString();
+    } catch (e) {
+      // URL 파싱 실패 시 원본 URL 반환
+      console.warn('[BookDetail] URL parsing failed, using original:', imageUrl);
+      return imageUrl;
+    }
+  };
+
+  // 이미지 로딩 에러 핸들러
+  const handleImageError = () => {
+    console.error('[BookDetail] Image load error:', book.image);
+    setImageLoadError(true);
+  };
 
   // 스타일을 동적으로 생성
   const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
@@ -244,6 +299,7 @@ export default function BookDetail({ route, navigation }) {
       book.description ||
       book.contents ||
       book.plot ||
+      book.moreInfo ||
       book.authorInfo_kr ||
       book.description_kr ||
       book.moreInfo_kr
@@ -255,6 +311,7 @@ export default function BookDetail({ route, navigation }) {
         contents: book.contents || '',
         plot: book.plot || '',
         tableOfContents: book.tableOfContents || '',
+        moreInfo: book.moreInfo || '', // H행: 상세정보
         // 한국어 필드
         authorInfo_kr: book.authorInfo_kr || '',
         description_kr: book.description_kr || '',
@@ -269,6 +326,7 @@ export default function BookDetail({ route, navigation }) {
     book?.authorInfo,
     book?.publisherReview,
     book?.plot,
+    book?.moreInfo,
     book?.authorInfo_kr,
     book?.description_kr,
     book?.moreInfo_kr,
@@ -303,50 +361,83 @@ export default function BookDetail({ route, navigation }) {
     }
   };
 
+  // 내용이 비어있거나 유효하지 않은지 확인하는 함수
+  const isEmptyContent = (content) => {
+    if (!content) return true;
+    const trimmed = content.trim();
+    return trimmed === '' || trimmed.length === 0;
+  };
+
+  // 내용이 같은지 확인하는 함수
+  const isSameContent = (content1, content2) => {
+    if (!content1 || !content2) return false;
+    return content1.trim() === content2.trim();
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'author':
+      case 'author': {
+        const authorContent = language === 'korean' && details?.authorInfo_kr
+          ? details.authorInfo_kr
+          : details?.authorInfo;
+        
+        // About Book이나 More Info와 내용이 같은지 확인
+        // G행: 도서정보 (description)
+        const aboutBookContentForAuthor = language === 'korean' && details?.description_kr
+          ? details.description_kr
+          : details?.description || details?.tableOfContents || details?.plot || details?.contents;
+        // H행: 상세정보 (moreInfo)
+        const moreInfoContentForAuthor = language === 'korean' && details?.moreInfo_kr
+          ? details.moreInfo_kr
+          : details?.moreInfo || details?.publisherReview || details?.review;
+
+        const isAuthorSameAsAboutBook = isSameContent(authorContent, aboutBookContentForAuthor);
+        const isAuthorSameAsMoreInfo = isSameContent(authorContent, moreInfoContentForAuthor);
+
         return (
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>{getTabTitle('author')}</Text>
             <Text style={styles.tabContentText}>
-              {language === 'korean' && details?.authorInfo_kr
-                ? details.authorInfo_kr
-                : details?.authorInfo ||
-                  `${book.author || 'The author'} ${config.defaultAuthorText}`}
+              {isEmptyContent(authorContent) || (isAuthorSameAsAboutBook && isAuthorSameAsMoreInfo)
+                ? getTranslation('noInformation')
+                : authorContent || getTranslation('noInformation')}
             </Text>
           </View>
         );
-      case 'aboutBook':
+      }
+      case 'aboutBook': {
+        // G행: 도서정보 (description) - 구글 시트 G 컬럼
+        const aboutBookContent_kr = language === 'korean' && details?.description_kr
+          ? details.description_kr
+          : null;
+        const aboutBookContent_en = details?.description || details?.tableOfContents || details?.plot || details?.contents;
+        const aboutBookContent = aboutBookContent_kr || aboutBookContent_en;
+
+        // Author나 More Info와 내용이 같은지 확인
+        const authorContentForAboutBook = language === 'korean' && details?.authorInfo_kr
+          ? details.authorInfo_kr
+          : details?.authorInfo;
+        // H행: 상세정보 (moreInfo) - 구글 시트 H 컬럼만 사용
+        const moreInfoContentForAboutBook = language === 'korean' && details?.moreInfo_kr
+          ? details.moreInfo_kr
+          : details?.moreInfo || details?.publisherReview || details?.review;
+
+        const isAboutBookSameAsAuthor = isSameContent(aboutBookContent, authorContentForAboutBook);
+        const isAboutBookSameAsMoreInfo = isSameContent(aboutBookContent, moreInfoContentForAboutBook);
+
         return (
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>
               {getTabTitle('aboutBook')}
             </Text>
-            {language === 'korean' && details?.description_kr ? (
-              <View>
-                <Text style={styles.tabContentText}>
-                  {details.description_kr}
-                </Text>
-              </View>
-            ) : details?.tableOfContents ? (
+            {isEmptyContent(aboutBookContent) || (isAboutBookSameAsAuthor && isAboutBookSameAsMoreInfo) ? (
               <Text style={styles.tabContentText}>
-                {details.tableOfContents}
+                {getTranslation('noInformation')}
               </Text>
-            ) : details?.plot ? (
-              <View>
-                <Text style={styles.tabContentText}>{details.plot}</Text>
-              </View>
-            ) : details?.description || details?.contents ? (
-              <View>
-                <Text style={styles.tabContentText}>
-                  {details.description || details.contents}
-                </Text>
-              </View>
             ) : (
               <View>
                 <Text style={styles.tabContentText}>
-                  Table of contents information is not available for this book.
+                  {aboutBookContent}
                 </Text>
                 {(details?.publisher || book.publisher) && (
                   <View style={styles.infoSection}>
@@ -367,20 +458,37 @@ export default function BookDetail({ route, navigation }) {
             )}
           </View>
         );
-      case 'moreInfo':
+      }
+      case 'moreInfo': {
+        // H행: 상세정보 (moreInfo) - 구글 시트 H 컬럼
+        const moreInfoContent_kr = language === 'korean' && details?.moreInfo_kr
+          ? details.moreInfo_kr
+          : null;
+        // G행(description)과 중복되지 않도록 moreInfo, publisherReview, review만 사용
+        const moreInfoContent_en = details?.moreInfo || details?.publisherReview || details?.review;
+        const moreInfoContent = moreInfoContent_kr || moreInfoContent_en;
+
+        // Author나 About Book과 내용이 같은지 확인
+        const authorContentForMoreInfo = language === 'korean' && details?.authorInfo_kr
+          ? details.authorInfo_kr
+          : details?.authorInfo;
+        // G행: 도서정보 (description) - 구글 시트 G 컬럼만 사용
+        const aboutBookContentForMoreInfo = language === 'korean' && details?.description_kr
+          ? details.description_kr
+          : details?.description || details?.tableOfContents || details?.plot || details?.contents;
+
+        const isMoreInfoSameAsAuthor = isSameContent(moreInfoContent, authorContentForMoreInfo);
+        const isMoreInfoSameAsAboutBook = isSameContent(moreInfoContent, aboutBookContentForMoreInfo);
+
         return (
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>
               {getTabTitle('moreInfo')}
             </Text>
             <Text style={styles.tabContentText}>
-              {language === 'korean' && details?.moreInfo_kr
-                ? details.moreInfo_kr
-                : details?.publisherReview ||
-                  details?.review ||
-                  details?.contents ||
-                  details?.description ||
-                  'Publisher review information is not available.'}
+              {isEmptyContent(moreInfoContent) || (isMoreInfoSameAsAuthor && isMoreInfoSameAsAboutBook)
+                ? getTranslation('noInformation')
+                : moreInfoContent || getTranslation('noInformation')}
             </Text>
             <View
               style={[styles.adContainer, { marginTop: 20, marginBottom: 20 }]}
@@ -389,6 +497,7 @@ export default function BookDetail({ route, navigation }) {
             </View>
           </View>
         );
+      }
       default:
         return null;
     }
@@ -429,45 +538,38 @@ export default function BookDetail({ route, navigation }) {
         <View style={styles.bookHeaderContainer}>
           <View style={styles.bookHeader}>
             <View style={styles.bookImageContainer}>
-              {book.image ? (
+              {book.image && book.image.trim() ? (
                 <TouchableOpacity
-                  onPress={() => setImageModalVisible(true)}
+                  onPress={() => {
+                    if (book.image && book.image.trim()) {
+                      setImageModalVisible(true);
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
                   <Image
                     source={{ uri: book.image }}
                     style={styles.bookImage}
+                    onError={(error) => {
+                      console.error('[BookDetail] Image load error:', error.nativeEvent?.error);
+                      console.error('[BookDetail] Image URL:', book.image);
+                      setImageLoadError(true);
+                    }}
+                    onLoadStart={() => setImageLoadError(false)}
+                    onLoad={() => {
+                      setImageLoadError(false);
+                    }}
                   />
+                  {imageLoadError && (
+                    <View style={[styles.bookImage, styles.imagePlaceholder, { position: 'absolute', top: 0, left: 0 }]}>
+                      <Text style={styles.placeholderText}>No Image</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.bookImage, styles.imagePlaceholder]}>
                   <Text style={styles.placeholderText}>No Image</Text>
                 </View>
-              )}
-              {/* View on Store 버튼 - 책 표지 바로 아래 */}
-              {book.link && (
-                <TouchableOpacity
-                  style={styles.viewStoreButton}
-                  onPress={async () => {
-                    try {
-                      const canOpen = await Linking.canOpenURL(book.link);
-                      if (canOpen) {
-                        await Linking.openURL(book.link);
-                      } else {
-                        console.error(
-                          '[BookDetail] Cannot open URL:',
-                          book.link,
-                        );
-                      }
-                    } catch (error) {
-                      console.error('[BookDetail] Error opening URL:', error);
-                    }
-                  }}
-                >
-                  <Text style={styles.viewStoreText} numberOfLines={1}>
-                    {getTranslation('viewOnStore')}
-                  </Text>
-                </TouchableOpacity>
               )}
             </View>
             <View style={styles.bookInfo}>
@@ -502,6 +604,31 @@ export default function BookDetail({ route, navigation }) {
                     : book.author || 'Unknown Author'}
                 </Text>
               </TouchableOpacity>
+              {/* View on Store 버튼 - 작가 이름 아래 */}
+              {book.link && (
+                <TouchableOpacity
+                  style={styles.viewStoreButton}
+                  onPress={async () => {
+                    try {
+                      const canOpen = await Linking.canOpenURL(book.link);
+                      if (canOpen) {
+                        await Linking.openURL(book.link);
+                      } else {
+                        console.error(
+                          '[BookDetail] Cannot open URL:',
+                          book.link,
+                        );
+                      }
+                    } catch (error) {
+                      console.error('[BookDetail] Error opening URL:', error);
+                    }
+                  }}
+                >
+                  <Text style={styles.viewStoreText} numberOfLines={1}>
+                    {getTranslation('viewOnStore')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -684,7 +811,7 @@ export default function BookDetail({ route, navigation }) {
       )}
 
       {/* 이미지 확대 모달 */}
-      {imageModalVisible && book.image && (
+      {imageModalVisible && book.image && book.image.trim() && (
         <Modal
           visible={imageModalVisible}
           transparent={true}
@@ -704,11 +831,26 @@ export default function BookDetail({ route, navigation }) {
               activeOpacity={1}
               onPress={() => setImageModalVisible(false)}
             >
-              <Image
-                source={{ uri: book.image }}
-                style={styles.imageModalImage}
-                resizeMode="contain"
-              />
+              {book.image && book.image.trim() ? (
+                <Image
+                  source={{ 
+                    uri: book.image,
+                    cache: 'force-cache'
+                  }}
+                  style={styles.imageModalImage}
+                  resizeMode="contain"
+                  onError={() => {
+                    console.error('[BookDetail] Modal image load error:', book.image);
+                    setImageModalVisible(false);
+                  }}
+                />
+              ) : (
+                <View style={styles.imageModalPlaceholder}>
+                  <Text style={styles.imageModalPlaceholderText}>
+                    {getTranslation('noInformation')}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </Modal>
@@ -831,11 +973,12 @@ const getStyles = (colors, isDark) =>
       backgroundColor: colors.link,
       borderRadius: 8,
       paddingVertical: 10,
-      paddingHorizontal: 8,
+      paddingHorizontal: 16,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      width: 120,
+      alignSelf: 'flex-start',
+      marginTop: 8,
     },
     viewStoreText: {
       color: '#fff',
@@ -1003,5 +1146,21 @@ const getStyles = (colors, isDark) =>
     imageModalImage: {
       width: Dimensions.get('window').width - 40,
       height: Dimensions.get('window').height - 120,
+      // 고해상도 이미지 표시를 위한 설정
+      // React Native Image는 자동으로 최적 해상도를 선택하지만,
+      // 원본 이미지 URL이 고해상도인 경우 더 선명하게 표시됨
+    },
+    imageModalPlaceholder: {
+      width: Dimensions.get('window').width - 40,
+      height: Dimensions.get('window').height - 120,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: 8,
+    },
+    imageModalPlaceholderText: {
+      color: '#fff',
+      fontSize: 16,
+      textAlign: 'center',
     },
   });

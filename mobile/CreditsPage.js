@@ -187,13 +187,13 @@ export default function CreditsPage({ navigation }) {
               {/* QA Testers */}
               <View style={styles.creditItem}>
                 <Text style={styles.creditLabel}>QA Testers</Text>
-                <Text style={styles.creditValue}></Text>
+                <Text style={styles.creditValue}>SJ, JA</Text>
               </View>
 
               {/* Localization Managers */}
               <View style={styles.creditItem}>
                 <Text style={styles.creditLabel}>Localization Managers</Text>
-                <Text style={styles.creditValue}></Text>
+                <Text style={styles.creditValue}>Mary, Carol, Ann</Text>
               </View>
 
               {/* Special Thanks */}

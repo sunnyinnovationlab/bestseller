@@ -12,6 +12,7 @@ import SettingsPage from './SettingsPage';
 import UserDataPage from './UserDataPage';
 import CreditsPage from './CreditsPage';
 import OpenSourceInfoPage from './OpenSourceInfoPage';
+import SunnyGamesAppsPage from './SunnyGamesAppsPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +77,7 @@ export default function App() {
               <Stack.Screen name="UserData" component={UserDataPage} />
               <Stack.Screen name="Credits" component={CreditsPage} />
               <Stack.Screen name="OpenSourceInfo" component={OpenSourceInfoPage} />
+              <Stack.Screen name="SunnyGamesApps" component={SunnyGamesAppsPage} />
             </Stack.Navigator>
           </NavigationContainer>
         </BookmarkProvider>

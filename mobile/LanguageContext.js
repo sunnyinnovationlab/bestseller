@@ -22,12 +22,13 @@ const parseTSV = text =>
 
 const filterColumns = (rows, startIndex) =>
   rows.map(row => {
-    const image = row[1] ?? '';
+    const image = row[1] ?? ''; // B행: 이미지 URL
+    const link = row[2] ?? ''; // C행: View on Store URL
     const slice = row.slice(startIndex, startIndex + 5);
     while (slice.length < 5) {
       slice.push('');
     }
-    return [image, ...slice];
+    return [image, link, ...slice]; // [이미지, 링크, 제목, 작가, 작가정보, 책에 대해, 더 많은 정보]
   });
 
 const fetchSheet = async url => {
@@ -114,8 +115,8 @@ export const LanguageProvider = ({ children }) => {
 
     const rawHeaderRow = data[1] ?? [];
     const headerSlice = rawHeaderRow.slice(startIndex, startIndex + 5);
-    const headerRow = [rawHeaderRow[1] ?? '', ...headerSlice];
-    while (headerRow.length < 6) {
+    const headerRow = [rawHeaderRow[1] ?? '', rawHeaderRow[2] ?? '', ...headerSlice]; // [이미지, 링크, 제목, 작가, 작가정보, 책에 대해, 더 많은 정보]
+    while (headerRow.length < 7) {
       headerRow.push('');
     }
     setColumnHeaders(headerRow);

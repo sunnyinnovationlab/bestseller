@@ -246,38 +246,72 @@ export default function BookDetail({ route, navigation }) {
       return;
     }
 
-    // 앱 언어에 맞는 Wikipedia 언어
+    // 1. 원어 상태일 때: 책의 국가 Wikipedia + 원어 이름
+    if (language === 'original') {
+      const countryWikiLang =
+        {
+          KR: 'ko',
+          US: 'en',
+          UK: 'en',
+          JP: 'ja',
+          CN: 'zh',
+          TW: 'zh',
+          FR: 'fr',
+          ES: 'es',
+        }[country] || 'en';
+
+      const url = `https://${countryWikiLang}.wikipedia.org/wiki/${encodeURIComponent(
+        book.author,
+      )}`;
+
+      console.log(
+        '🔍 [Original] Searching:',
+        book.author,
+        'on',
+        `${countryWikiLang}.wikipedia.org`,
+      );
+
+      setWikiUrl(url);
+      setWikiType('author');
+      setWikiModalVisible(true);
+      return;
+    }
+
+    // 2. 번역 상태일 때: 앱 언어 Wikipedia + 번역된 이름 (Wikidata 있을 때만)
     const wikiLang = getWikiLangByAppLanguage();
 
-    // 번역된 이름 가져오기
+    const targetLangKey =
+      {
+        ko: 'ko',
+        ja: 'ja',
+        zh: 'zh',
+        fr: 'fr',
+        es: 'es',
+        en: 'en',
+      }[wikiLang] || 'en';
+
     const { name: translatedName, hasWikidata } = getAuthorTranslatedName(
-      authorName,
+      book.author,
       country,
-      wikiLang === 'ko'
-        ? 'ko'
-        : wikiLang === 'ja'
-        ? 'ja'
-        : wikiLang === 'zh'
-        ? 'zh'
-        : wikiLang === 'fr'
-        ? 'fr'
-        : wikiLang === 'es'
-        ? 'es'
-        : 'en',
+      targetLangKey,
     );
 
     // Wikidata에 없으면 검색 안 함
     if (!hasWikidata) {
-      console.log(
-        `⚠️ Author not in Wikidata: ${authorName} (source: translate_failed or wikidata_not_found)`,
-      );
+      console.log(`⚠️ [Translated] Author not in Wikidata: ${book.author}`);
       return;
     }
 
-    // 번역된 이름으로 Wikipedia 검색
     const url = `https://${wikiLang}.wikipedia.org/wiki/${encodeURIComponent(
       translatedName,
     )}`;
+
+    console.log(
+      '🔍 [Translated] Searching:',
+      translatedName,
+      'on',
+      `${wikiLang}.wikipedia.org`,
+    );
 
     setWikiUrl(url);
     setWikiType('author');

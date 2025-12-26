@@ -15,21 +15,68 @@ import { useTheme } from './ThemeContext';
 import MyAds from './BannerAd';
 import { BannerAdSize } from 'react-native-google-mobile-ads';
 import { APP_VERSION } from './config/version';
+import translationsData from './assets/translations.json';
 
-export const LANGUAGE_OPTIONS = [
-  { label: '한국어', value: 0 },
-  { label: 'English', value: 1 },
-  { label: '日本語', value: 2 },
-  { label: '中国人', value: 3 },
-  { label: '台灣', value: 4 },
-  { label: 'Français', value: 5 },
-  { label: 'Español', value: 6 },
-];
+// LANGUAGE_OPTIONS는 JSON 파일에서 동적으로 생성
+export const getLanguageOptions = (translationsData, currentLanguage) => {
+  if (!translationsData?.languageLabels) {
+    // Fallback
+    return [
+      { label: 'Korean', value: 0 },
+      { label: 'English', value: 1 },
+      { label: 'Japanese', value: 2 },
+      { label: 'Chinese (SC)', value: 3 },
+      { label: 'Traditional Chinese', value: 4 },
+      { label: 'French', value: 5 },
+      { label: 'Spanish', value: 6 },
+    ];
+  }
+  
+  // 현재 선택된 언어로 각 언어 레이블 표시
+  // 예: English로 선택했으면 모든 언어를 English로 표시
+  return [0, 1, 2, 3, 4, 5, 6].map(value => ({
+    label: translationsData.languageLabels[value]?.[currentLanguage] || 
+           translationsData.languageLabels[value]?.[value] || 
+           `Language ${value}`,
+    value,
+  }));
+};
 
 export default function SettingsPage({ navigation }) {
   const { language, setLanguage, userLanguage, setUserLanguage } = useLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const { theme, updateTheme, isDark, colors } = useTheme();
+  
+  // JSON 파일에서 언어 옵션 가져오기
+  const LANGUAGE_OPTIONS = useMemo(() => {
+    return getLanguageOptions(translationsData, userLanguage);
+  }, [userLanguage]);
+  
+  // JSON 파일에서 번역 가져오기
+  const getTranslation = (key) => {
+    if (!translationsData || !translationsData.settings || !translationsData.settings[key]) {
+      // Fallback: 기본값
+      const fallbacks = {
+        settings: 'Settings',
+        language: 'Language',
+        theme: 'Theme',
+        dark: 'Dark',
+        light: 'Light',
+        instagram: 'Instagram',
+        twitter: 'X (Twitter)',
+        link: 'Link',
+        sunnyGamesApps: "Sunny's Games and Apps",
+        credits: 'Credits',
+        openSourceInfo: 'Open Source Info',
+        appVersion: 'App Version',
+      };
+      return fallbacks[key] || key;
+    }
+    
+    const translation = translationsData.settings[key];
+    // userLanguage는 0=Korean, 1=English, 2=Japanese, 3=Chinese, 4=Traditional Chinese, 5=French, 6=Spanish
+    return translation[userLanguage] || translation['1'] || key;
+  };
 
   // 화면이 포커스될 때마다 테마 다시 불러오기
   useEffect(() => {
@@ -165,7 +212,7 @@ export default function SettingsPage({ navigation }) {
       {/* 헤더 */}
       <View style={dynamicStyles.header}>
         <Icon name="cog" size={24} color={colors.text} style={styles.headerIcon} />
-        <Text style={dynamicStyles.headerTitle}>Settings</Text>
+        <Text style={dynamicStyles.headerTitle}>{getTranslation('settings')}</Text>
       </View>
 
       <ScrollView style={[styles.scrollView, { backgroundColor: colors.primaryBackground }]} contentContainerStyle={styles.scrollContent}>
@@ -176,10 +223,12 @@ export default function SettingsPage({ navigation }) {
             activeOpacity={0.7}
             onPress={() => setIsLanguageOpen(!isLanguageOpen)}
           >
-            <Text style={dynamicStyles.settingLabel}>Language</Text>
+            <Text style={dynamicStyles.settingLabel}>{getTranslation('language')}</Text>
             <View style={styles.languageContainer}>
               <Text style={dynamicStyles.languageValue}>
-                {LANGUAGE_OPTIONS.find(opt => opt.value === userLanguage)?.label || '한국어'}
+                {translationsData?.languageLabels?.[userLanguage]?.[userLanguage] || 
+                 translationsData?.languageLabels?.[userLanguage]?.[1] || 
+                 '한국어'}
               </Text>
               <Icon name={isLanguageOpen ? "chevron-up" : "chevron-down"} size={20} color={colors.secondaryText} />
             </View>
@@ -225,7 +274,7 @@ export default function SettingsPage({ navigation }) {
 
         {/* Theme */}
         <View style={dynamicStyles.settingItem}>
-          <Text style={dynamicStyles.settingLabel}>Theme</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('theme')}</Text>
           <View style={dynamicStyles.themeContainer}>
             <TouchableOpacity
               style={[
@@ -240,7 +289,7 @@ export default function SettingsPage({ navigation }) {
                   theme === 'Dark' && dynamicStyles.themeOptionTextActive,
                 ]}
               >
-                Dark
+                {getTranslation('dark')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -256,7 +305,7 @@ export default function SettingsPage({ navigation }) {
                   theme === 'Light' && dynamicStyles.themeOptionTextActive,
                 ]}
               >
-                Light
+                {getTranslation('light')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -264,23 +313,23 @@ export default function SettingsPage({ navigation }) {
 
         {/* Instagram */}
         <View style={dynamicStyles.settingItem}>
-          <Text style={dynamicStyles.settingLabel}>Instagram</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('instagram')}</Text>
           <TouchableOpacity
             style={styles.linkButton}
             onPress={() => handleLinkPress('https://www.instagram.com/sunnyinnolab/')}
           >
-            <Text style={dynamicStyles.linkText}>Link</Text>
+            <Text style={dynamicStyles.linkText}>{getTranslation('link')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* X (Twitter) */}
         <View style={dynamicStyles.settingItem}>
-          <Text style={dynamicStyles.settingLabel}>X (Twitter)</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('twitter')}</Text>
           <TouchableOpacity
             style={styles.linkButton}
             onPress={() => handleLinkPress('https://x.com/Sunnyinnolab')}
           >
-            <Text style={dynamicStyles.linkText}>Link</Text>
+            <Text style={dynamicStyles.linkText}>{getTranslation('link')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -290,7 +339,7 @@ export default function SettingsPage({ navigation }) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('SunnyGamesApps')}
         >
-          <Text style={dynamicStyles.settingLabel}>Sunny's Games and Apps</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('sunnyGamesApps')}</Text>
           <Icon name="chevron-right" size={24} color={colors.secondaryText} />
         </TouchableOpacity>
 
@@ -300,7 +349,7 @@ export default function SettingsPage({ navigation }) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('Credits')}
         >
-          <Text style={dynamicStyles.settingLabel}>Credits</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('credits')}</Text>
           <Icon name="chevron-right" size={24} color={colors.secondaryText} />
         </TouchableOpacity>
 
@@ -310,43 +359,43 @@ export default function SettingsPage({ navigation }) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('OpenSourceInfo')}
         >
-          <Text style={dynamicStyles.settingLabel}>Open Source Info</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('openSourceInfo')}</Text>
           <Icon name="chevron-right" size={24} color={colors.secondaryText} />
         </TouchableOpacity>
 
         {/* App Version */}
         <View style={dynamicStyles.settingItem}>
-          <Text style={dynamicStyles.settingLabel}>App Version</Text>
+          <Text style={dynamicStyles.settingLabel}>{getTranslation('appVersion')}</Text>
           <Text style={dynamicStyles.versionText}>v {APP_VERSION}</Text>
         </View>
 
-        <View style={styles.adContainer}>
-          <MyAds type="adaptive" size={BannerAdSize.BANNER} />
-        </View>
-
-        {/* Footer with Logo and Links */}
-        <View style={[styles.footer, { backgroundColor: colors.primaryBackground }]}>
-          <View style={styles.logoContainer}>
-            <TouchableOpacity
-              onPress={() => handleLinkPress('https://sunnyinnolab.com')}
-              activeOpacity={0.7}
-            >
-              <Image
-                source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
+        {/* 써니 로고 배너 - 세로 배치 (이미지 참고) */}
+        <View style={styles.sunnyBanner}>
+          <TouchableOpacity
+            onPress={() => handleLinkPress('https://sunnyinnolab.com')}
+            activeOpacity={0.7}
+            style={styles.logoButton}
+          >
+            <Image
+              source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
           <View style={styles.footerLinks}>
             <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74')}>
-              <Text style={[styles.footerLink, { color: colors.link }]}>Terms of Service</Text>
+              <Text style={styles.footerLink}>Terms of Service</Text>
             </TouchableOpacity>
             <View style={[styles.footerDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Privacy-Policy-ced8ead72ced4d8791ca4a71a289dd6b')}>
-              <Text style={[styles.footerLink, { color: colors.link }]}>Privacy Policy</Text>
+              <Text style={styles.footerLink}>Privacy Policy</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* 광고 - 써니 배너 아래 */}
+        <View style={styles.adContainer}>
+          <MyAds type="adaptive" size={BannerAdSize.BANNER} />
         </View>
       </ScrollView>
     </View>
@@ -363,36 +412,34 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 20
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  sunnyBanner: {
+    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 20,
+    paddingVertical: 20,
     marginTop: 20,
+    backgroundColor: '#2d2d2d', // 진한 회색 배경
   },
-  logoContainer: {
-    alignItems: 'flex-start',
-    flex: 1,
-    height: 144,
+  logoButton: {
+    alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    marginBottom: 12,
   },
   logoImage: {
-    height: 144,
-    width: 120,
+    // 원래 크기 사용 (자동 크기)
+    resizeMode: 'contain',
   },
   footerLinks: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     gap: 16,
-    flex: 1,
   },
   footerLink: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#ffffff', // 흰색 (다크모드/라이트모드 모두)
   },
   footerDivider: {
     width: 1,

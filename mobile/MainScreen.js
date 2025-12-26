@@ -8,124 +8,25 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BookmarkScreen from './Bookmark';
-import SettingsPage, { LANGUAGE_OPTIONS } from './SettingsPage';
+import SettingsPage from './SettingsPage';
 import LoadingScreen from './LoadingScreen';
 import { useBookmark } from './BookmarkContext';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import { BannerAdSize, InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 import MyAds from './BannerAd';
+import translationsData from './assets/translations.json';
 
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3940256099942544/1033173712';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
   requestNonPersonalizedAdsOnly: true,
 });
-
-// 번역 데이터 (Google Sheets 기반)
-// 참조: https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/edit?gid=0#gid=0
-// Row 2-8: 국가 이름
-// Row 20: Best Sellers
-const translations = {
-  korean: {
-    bestSellers: '베스트 셀러', // Row 20, Column A
-  },
-  english: {
-    bestSellers: 'Best Sellers', // Row 20, Column B
-  },
-  japanese: {
-    bestSellers: 'ベストセラーズ', // Row 20, Column C
-  },
-  chinese: {
-    bestSellers: '畅销书', // Row 20, Column D
-  },
-  traditionalChinese: {
-    bestSellers: '暢銷書', // Row 20, Column E
-  },
-  french: {
-    bestSellers: 'Meilleures ventes', // Row 20, Column F
-  },
-  spanish: {
-    bestSellers: 'Superventas',
-  },
-};
-
-const countryTranslations = {
-  korean: {
-    KOR: '한국', // Row 2, Column A
-    USA: '미국', // Row 3, Column A
-    JPN: '일본', // Row 4, Column A
-    GBR: '영국', // Row 5, Column A
-    CHN: '중국', // Row 6, Column A
-    TPE: '대만', // Row 7, Column A
-    FRA: '프랑스', // Row 8, Column A
-    ESP: '스페인',
-  },
-  japanese: {
-    JPN: '日本', // Row 4, Column C
-    USA: '美国', // Row 3, Column C
-    KOR: '韓国', // Row 2, Column C
-    CHN: '中国', // Row 6, Column C
-    TPE: '台湾', // Row 7, Column C
-    GBR: '英国', // Row 5, Column C
-    FRA: '仏国', // Row 8, Column C
-    ESP: 'スペイン',
-  },
-  chinese: {
-    CHN: '中国', // Row 6, Column D
-    TPE: '台湾', // Row 7, Column D
-    USA: '美国', // Row 3, Column D
-    JPN: '日本', // Row 4, Column D
-    KOR: '韩国', // Row 2, Column D
-    GBR: '英国', // Row 5, Column D
-    FRA: '法国', // Row 8, Column D
-    ESP: '西班牙',
-  },
-  traditionalChinese: {
-    TPE: '台灣', // Row 7, Column E
-    CHN: '中國', // Row 6, Column E
-    USA: '美國', // Row 3, Column E
-    JPN: '日本', // Row 4, Column E
-    KOR: '韓國', // Row 2, Column E
-    GBR: '英國', // Row 5, Column E
-    FRA: '法國', // Row 8, Column E
-    ESP: '西班牙',
-  },
-  french: {
-    FRA: 'France', // Row 8, Column F
-    USA: 'USA', // Row 3, Column F
-    GBR: 'UK', // Row 5, Column F
-    KOR: 'Corée', // Row 2, Column F
-    JPN: 'Japon', // Row 4, Column F
-    CHN: 'Chine', // Row 6, Column F
-    TPE: 'Taïwan', // Row 7, Column F
-    ESP: 'Espagne',
-  },
-  english: {
-    USA: 'USA', // Row 3, Column B
-    GBR: 'UK', // Row 5, Column B
-    KOR: 'Korea', // Row 2, Column B
-    JPN: 'Japan', // Row 4, Column B
-    CHN: 'China', // Row 6, Column B
-    TPE: 'Taiwan', // Row 7, Column B
-    FRA: 'France', // Row 8, Column B
-    ESP: 'Spain',
-  },
-  spanish: {
-    ESP: 'España',
-    USA: 'EE. UU.',
-    GBR: 'Reino Unido',
-    KOR: 'Corea',
-    JPN: 'Japón',
-    CHN: 'China',
-    TPE: 'Taiwán',
-    FRA: 'Francia',
-  },
-};
 
 const COUNTRY_TABS = [
   { label: 'KOR', index: 0 },
@@ -174,6 +75,26 @@ const COUNTRY_INDEX_TO_LABEL_COLUMN = {
 export default function MainScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState('home');
   const [loaded, setLoaded] = useState(false);
+
+  // Back 키 비활성화
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // 뒤로가기 키를 눌러도 아무 동작도 하지 않음
+      return true;
+    });
+
+    return () => backHandler.remove();
+  }, []);
+
+  // Navigation beforeRemove 이벤트로 뒤로가기 방지
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // 뒤로가기 방지
+      e.preventDefault();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
@@ -252,9 +173,23 @@ export default function MainScreen({ navigation }) {
     [filteredData]
   );
 
+  // JSON 파일에서 언어 레이블 가져오기
   const userLanguageLabel = useMemo(() => {
-    const option = LANGUAGE_OPTIONS.find(opt => opt.value === userLanguage);
-    return option ? option.label : '한국어';
+    if (translationsData?.languageLabels?.[userLanguage]?.[userLanguage]) {
+      // 현재 선택된 언어로 언어 레이블 표시 (예: English로 선택하면 "English" 표시)
+      return translationsData.languageLabels[userLanguage][userLanguage];
+    }
+    // Fallback
+    const fallbacks = {
+      0: '한국어',
+      1: 'English',
+      2: '日本語',
+      3: 'Chinese (SC)',
+      4: 'Traditional Chinese',
+      5: 'French',
+      6: 'Spanish',
+    };
+    return fallbacks[userLanguage] || '한국어';
   }, [userLanguage]);
 
   const originalLanguageIndex = COUNTRY_INDEX_TO_LABEL_COLUMN[country] ?? 1;
@@ -273,19 +208,22 @@ export default function MainScreen({ navigation }) {
     }
   };
 
-  // 나라 이름 번역 가져오기
+  // JSON 파일에서 나라 이름 번역 가져오기
   const getCountryName = (countryLabel) => {
-    const languageMap = {
-      0: 'korean',
-      1: 'english',
-      2: 'japanese',
-      3: 'chinese',
-      4: 'traditionalChinese',
-      5: 'french',
-      6: 'spanish',
-    };
-    const langKey = languageMap[userLanguage] || 'english';
-    return countryTranslations[langKey]?.[countryLabel] || countryLabel;
+    if (!translationsData?.countries?.[countryLabel]) {
+      return countryLabel;
+    }
+    const countryData = translationsData.countries[countryLabel];
+    // userLanguage: 0=Korean, 1=English, 2=Japanese, 3=Chinese, 4=Traditional Chinese, 5=French, 6=Spanish
+    return countryData[userLanguage] || countryData['1'] || countryLabel;
+  };
+  
+  // JSON 파일에서 Best Sellers 텍스트 가져오기
+  const getBestSellersText = () => {
+    if (!translationsData?.bestSellers) {
+      return 'Best Sellers';
+    }
+    return translationsData.bestSellers[userLanguage] || translationsData.bestSellers['1'] || 'Best Sellers';
   };
 
   // 📚 책 아이템 렌더링
@@ -439,7 +377,7 @@ export default function MainScreen({ navigation }) {
       <View style={[styles.homeContainer, { backgroundColor: colors.primaryBackground }]}>
         {/* 상단 헤더 */}
         <View style={[styles.header, { backgroundColor: colors.primaryBackground, borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Best Sellers</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{getBestSellersText()}</Text>
           <View style={[styles.languageToggle, { backgroundColor: colors.secondaryBackground, borderColor: colors.border }]}>
             <TouchableOpacity
               style={[
@@ -597,7 +535,7 @@ export default function MainScreen({ navigation }) {
             color={activeTab === 'home' ? colors.link : colors.secondaryText} 
           />
           <Text style={[dynamicStyles.navLabel, activeTab === 'home' && dynamicStyles.activeNavLabel]}>
-            Home
+            {translationsData?.navigation?.home?.[userLanguage] || translationsData?.navigation?.home?.[1] || 'Home'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -610,7 +548,7 @@ export default function MainScreen({ navigation }) {
             color={activeTab === 'bookmark' ? colors.link : colors.secondaryText} 
           />
           <Text style={[dynamicStyles.navLabel, activeTab === 'bookmark' && dynamicStyles.activeNavLabel]}>
-            Bookmarks
+            {translationsData?.navigation?.bookmarks?.[userLanguage] || translationsData?.navigation?.bookmarks?.[1] || 'Bookmarks'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -623,7 +561,7 @@ export default function MainScreen({ navigation }) {
             color={activeTab === 'settings' ? colors.link : colors.secondaryText} 
           />
           <Text style={[dynamicStyles.navLabel, activeTab === 'settings' && dynamicStyles.activeNavLabel]}>
-            Settings
+            {translationsData?.navigation?.settings?.[userLanguage] || translationsData?.navigation?.settings?.[1] || 'Settings'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -720,7 +658,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 20,
-    paddingBottom: 20,
+    paddingBottom: 100, // 네비게이션 바 높이만큼 여백 추가 (아이콘 24 + 텍스트 14 + 패딩 30 + 여유 32 = 약 100px)
   },
   bookItem: {
     flexDirection: 'row',

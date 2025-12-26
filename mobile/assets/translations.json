@@ -1,0 +1,374 @@
+{
+  "languageLabels": {
+    "0": {
+      "0": "한국어",
+      "1": "Korean",
+      "2": "韓国語",
+      "3": "韩语",
+      "4": "韓語",
+      "5": "Coréen",
+      "6": "Coreano"
+    },
+    "1": {
+      "0": "영어",
+      "1": "English",
+      "2": "英語",
+      "3": "英语",
+      "4": "英語",
+      "5": "Anglais",
+      "6": "Inglés"
+    },
+    "2": {
+      "0": "일본어",
+      "1": "Japanese",
+      "2": "日本語",
+      "3": "日语",
+      "4": "日語",
+      "5": "Japonais",
+      "6": "Japonés"
+    },
+    "3": {
+      "0": "중국어 (간체)",
+      "1": "Chinese (SC)",
+      "2": "中国語（簡体字）",
+      "3": "中文（简体）",
+      "4": "中文（簡體）",
+      "5": "Chinois (SC)",
+      "6": "Chino (SC)"
+    },
+    "4": {
+      "0": "중국어 (번체)",
+      "1": "Chinese (TC)",
+      "2": "中国語（繁体字）",
+      "3": "中文（繁体）",
+      "4": "中文（繁體）",
+      "5": "Chinois (TC)",
+      "6": "Chino (TC)"
+    },
+    "5": {
+      "0": "프랑스어",
+      "1": "French",
+      "2": "フランス語",
+      "3": "法语",
+      "4": "法語",
+      "5": "Français",
+      "6": "Francés"
+    },
+    "6": {
+      "0": "스페인어",
+      "1": "Spanish",
+      "2": "スペイン語",
+      "3": "西班牙语",
+      "4": "西班牙語",
+      "5": "Espagnol",
+      "6": "Español"
+    }
+  },
+  "countries": {
+    "KOR": {
+      "0": "한국",
+      "1": "KOR",
+      "2": "韓国",
+      "3": "韩国",
+      "4": "韓國",
+      "5": "Corée",
+      "6": "Corea"
+    },
+    "USA": {
+      "0": "미국",
+      "1": "USA",
+      "2": "美国",
+      "3": "美国",
+      "4": "美國",
+      "5": "USA",
+      "6": "USA"
+    },
+    "JPN": {
+      "0": "일본",
+      "1": "JPN",
+      "2": "日本",
+      "3": "日本",
+      "4": "日本",
+      "5": "Japon",
+      "6": "Japón"
+    },
+    "GBR": {
+      "0": "영국",
+      "1": "GBR",
+      "2": "英国",
+      "3": "英国",
+      "4": "英國",
+      "5": "UK",
+      "6": "UK"
+    },
+    "CHN": {
+      "0": "중국",
+      "1": "CHN",
+      "2": "中国",
+      "3": "中国",
+      "4": "中國",
+      "5": "Chine",
+      "6": "China"
+    },
+    "TPE": {
+      "0": "대만",
+      "1": "TPE",
+      "2": "台湾",
+      "3": "台湾",
+      "4": "台灣",
+      "5": "Taïwan",
+      "6": "Taiwán"
+    },
+    "FRA": {
+      "0": "프랑스",
+      "1": "FRA",
+      "2": "フランス",
+      "3": "法国",
+      "4": "法國",
+      "5": "France",
+      "6": "Francia"
+    },
+    "ESP": {
+      "0": "스페인",
+      "1": "ESP",
+      "2": "スペイン",
+      "3": "西班牙",
+      "4": "西班牙",
+      "5": "Espagne",
+      "6": "España"
+    }
+  },
+  "splash": {
+    "title": {
+      "0": "월드 베스트 셀러",
+      "1": "World Best Sellers",
+      "2": "ワールドベストセラーズ",
+      "3": "全球畅销书",
+      "4": "世界暢銷書",
+      "5": "Meilleures ventes mondiales",
+      "6": "Superventas mundiales"
+    },
+    "subtitle": {
+      "0": "전 세계가 주목하는 놀라운 책들을 발견해보세요!",
+      "1": "Discover amazing books the world is talking about!",
+      "2": "世界中が注目する素晴らしい本を見つけよう！",
+      "3": "探索那些吸引全球关注的精彩书籍！",
+      "4": "發現全球都在熱議的精彩書籍！",
+      "5": "Découvrez des livres exceptionnels qui captivent le monde entier !",
+      "6": "Descubre libros increíbles de los que todo el mundo está hablando"
+    }
+  },
+  "bestSellers": {
+    "0": "베스트 셀러",
+    "1": "Best Sellers",
+    "2": "ベストセラーズ",
+    "3": "畅销书",
+    "4": "暢銷書",
+    "5": "Meilleures ventes",
+    "6": "Superventas"
+  },
+  "settings": {
+    "settings": {
+      "0": "설정",
+      "1": "Settings",
+      "2": "設定",
+      "3": "设置",
+      "4": "設定",
+      "5": "Paramètres",
+      "6": "Configuración"
+    },
+    "language": {
+      "0": "언어",
+      "1": "Language",
+      "2": "言語",
+      "3": "语言",
+      "4": "語言",
+      "5": "Langue",
+      "6": "Idioma"
+    },
+    "theme": {
+      "0": "테마",
+      "1": "Theme",
+      "2": "テーマ",
+      "3": "主题",
+      "4": "主題",
+      "5": "Thème",
+      "6": "Tema"
+    },
+    "dark": {
+      "0": "다크",
+      "1": "Dark",
+      "2": "ダーク",
+      "3": "深色",
+      "4": "深色",
+      "5": "Sombre",
+      "6": "Oscuro"
+    },
+    "light": {
+      "0": "라이트",
+      "1": "Light",
+      "2": "ライト",
+      "3": "浅色",
+      "4": "淺色",
+      "5": "Clair",
+      "6": "Claro"
+    },
+    "instagram": {
+      "0": "Instagram",
+      "1": "Instagram",
+      "2": "Instagram",
+      "3": "Instagram",
+      "4": "Instagram",
+      "5": "Instagram",
+      "6": "Instagram"
+    },
+    "twitter": {
+      "0": "X (Twitter)",
+      "1": "X (Twitter)",
+      "2": "X (Twitter)",
+      "3": "X (Twitter)",
+      "4": "X (Twitter)",
+      "5": "X (Twitter)",
+      "6": "X (Twitter)"
+    },
+    "link": {
+      "0": "링크",
+      "1": "Link",
+      "2": "リンク",
+      "3": "链接",
+      "4": "連結",
+      "5": "Lien",
+      "6": "Enlace"
+    },
+    "sunnyGamesApps": {
+      "0": "Sunny's Games and Apps",
+      "1": "Sunny's Games and Apps",
+      "2": "Sunny's Games and Apps",
+      "3": "Sunny's Games and Apps",
+      "4": "Sunny's Games and Apps",
+      "5": "Jeux et applications de Sunny",
+      "6": "Juegos y aplicaciones de Sunny"
+    },
+    "credits": {
+      "0": "크레딧",
+      "1": "Credits",
+      "2": "クレジット",
+      "3": "致谢",
+      "4": "致謝",
+      "5": "Crédits",
+      "6": "Créditos"
+    },
+    "openSourceInfo": {
+      "0": "오픈소스 정보",
+      "1": "Open Source Info",
+      "2": "オープンソース情報",
+      "3": "开源信息",
+      "4": "開源資訊",
+      "5": "Informations open source",
+      "6": "Información de código abierto"
+    },
+    "appVersion": {
+      "0": "앱 버전",
+      "1": "App Version",
+      "2": "アプリバージョン",
+      "3": "应用版本",
+      "4": "應用程式版本",
+      "5": "Version de l'application",
+      "6": "Versión de la aplicación"
+    }
+  },
+  "bookDetail": {
+    "viewOnStore": {
+      "0": "스토어 방문",
+      "1": "View on Store",
+      "2": "ストアで見る",
+      "3": "前往商店",
+      "4": "查看店鋪",
+      "5": "Voir en magasin",
+      "6": "Ver en la tienda"
+    },
+    "author": {
+      "0": "저자",
+      "1": "Author",
+      "2": "著者",
+      "3": "作者",
+      "4": "作者",
+      "5": "Auteur",
+      "6": "Autor"
+    },
+    "aboutBook": {
+      "0": "도서 정보",
+      "1": "About Book",
+      "2": "書籍情報",
+      "3": "图书信息",
+      "4": "關於本書",
+      "5": "Informations sur le livre",
+      "6": "Sobre el libro"
+    },
+    "moreInfo": {
+      "0": "상세 정보",
+      "1": "More Info",
+      "2": "詳細情報",
+      "3": "细节",
+      "4": "更多資訊",
+      "5": "Plus d'informations",
+      "6": "Más información"
+    },
+    "noInformation": {
+      "0": "정보 없음",
+      "1": "No information",
+      "2": "情報なし",
+      "3": "无相关信息",
+      "4": "無相關資訊",
+      "5": "Aucune information",
+      "6": "Sin información"
+    }
+  },
+  "bookmark": {
+    "0": "북마크",
+    "1": "Bookmark",
+    "2": "ブックマーク",
+    "3": "书签",
+    "4": "書籤",
+    "5": "Signet",
+    "6": "Favoritos"
+  },
+  "moreInfoLabel": {
+    "0": "자세한 정보",
+    "1": "More Info",
+    "2": "詳細情報",
+    "3": "更多信息",
+    "4": "更多資訊",
+    "5": "Plus d'informations",
+    "6": "Más información"
+  },
+  "navigation": {
+    "home": {
+      "0": "홈",
+      "1": "Home",
+      "2": "ホーム",
+      "3": "首页",
+      "4": "首頁",
+      "5": "Accueil",
+      "6": "Inicio"
+    },
+    "bookmarks": {
+      "0": "북마크",
+      "1": "Bookmarks",
+      "2": "ブックマーク",
+      "3": "书签",
+      "4": "書籤",
+      "5": "Signets",
+      "6": "Marcadores"
+    },
+    "settings": {
+      "0": "설정",
+      "1": "Settings",
+      "2": "設定",
+      "3": "设置",
+      "4": "設定",
+      "5": "Paramètres",
+      "6": "Configuración"
+    }
+  }
+}

@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LanguageContext = createContext();
 
@@ -12,6 +20,7 @@ const DATA_SHEETS = [
   'https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/export?format=tsv&gid=225038494&range=A1:AQ32', // CHINA
   'https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/export?format=tsv&gid=287677657&range=A1:AQ32', // TAIWAN
   'https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/export?format=tsv&gid=460284331&range=A1:AQ32', // FRANCE
+  'https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/export?format=tsv&gid=806262731&range=A1:AQ32', // SPAIN
 ];
 
 const parseTSV = text =>
@@ -58,20 +67,54 @@ export const LanguageProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const dataCache = React.useRef({});
+  
+  // 로컬 캐시 TTL: 24시간 (데이터가 일주일마다 업데이트되므로 24시간 캐싱이 적절)
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
 
-  const sheetUrl = useMemo(() => DATA_SHEETS[country] ?? DATA_SHEETS[0], [country]);
-
-
+  const sheetUrl = useMemo(
+    () => DATA_SHEETS[country] ?? DATA_SHEETS[0],
+    [country],
+  );
 
   // 1. Fetch Translations (Once)
   useEffect(() => {
     const loadTranslations = async () => {
       try {
+        // 로컬 캐시 확인
+        const cacheKey = 'translations_data';
+        const cachedData = await AsyncStorage.getItem(cacheKey);
+        
+        if (cachedData) {
+          const { data: cachedRows, timestamp } = JSON.parse(cachedData);
+          const now = Date.now();
+          
+          // 캐시가 유효한 경우 (1시간 이내)
+          if (now - timestamp < 60 * 60 * 1000) {
+            console.log('[LanguageContext] Using cached translations');
+            setTranslations(cachedRows);
+            const labelsRow = cachedRows[22] ?? [];
+            setLanguageLabels(labelsRow);
+            return;
+          }
+        }
+        
+        // 네트워크에서 가져오기
         const rows = await fetchSheet(TRANSLATION_URL);
         setTranslations(rows);
 
         const labelsRow = rows[22] ?? [];
         setLanguageLabels(labelsRow);
+        
+        // 로컬 스토리지에 저장
+        try {
+          const cacheData = {
+            data: rows,
+            timestamp: Date.now(),
+          };
+          await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        } catch (storageError) {
+          console.warn('[LanguageContext] Translation cache write error:', storageError);
+        }
       } catch (err) {
         console.error('[Language] Failed to load translations:', err.message);
       }
@@ -81,18 +124,59 @@ export const LanguageProvider = ({ children }) => {
 
   // 2. Fetch Data (When country/sheetUrl changes)
   const fetchSheets = useCallback(async () => {
-    // Check cache first
+    // 1. 메모리 캐시 확인 (가장 빠름)
     if (dataCache.current[sheetUrl]) {
       setData(dataCache.current[sheetUrl]);
       setLoading(false);
       return;
     }
 
+    // 2. 로컬 스토리지 캐시 확인
+    try {
+      const cacheKey = `sheet_data_${sheetUrl}`;
+      const cachedData = await AsyncStorage.getItem(cacheKey);
+      
+      if (cachedData) {
+        const { data: cachedRows, timestamp } = JSON.parse(cachedData);
+        const now = Date.now();
+        
+        // 캐시가 유효한 경우 (24시간 이내)
+        if (now - timestamp < CACHE_TTL) {
+          console.log('[LanguageContext] Using cached data from AsyncStorage');
+          dataCache.current[sheetUrl] = cachedRows; // 메모리 캐시에도 저장
+          setData(cachedRows);
+          setLoading(false);
+          return;
+        } else {
+          console.log('[LanguageContext] Cache expired (24h), fetching new data');
+        }
+      }
+    } catch (cacheError) {
+      console.warn('[LanguageContext] Cache read error:', cacheError);
+    }
+
+    // 3. 네트워크에서 데이터 가져오기
     setLoading(true);
     setError(null);
     try {
       const rows = await fetchSheet(sheetUrl);
-      dataCache.current[sheetUrl] = rows; // Store in cache
+      
+      // 메모리 캐시에 저장
+      dataCache.current[sheetUrl] = rows;
+      
+      // 로컬 스토리지에 저장
+      try {
+        const cacheKey = `sheet_data_${sheetUrl}`;
+        const cacheData = {
+          data: rows,
+          timestamp: Date.now(),
+        };
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        console.log('[LanguageContext] Data cached to AsyncStorage');
+      } catch (storageError) {
+        console.warn('[LanguageContext] Cache write error:', storageError);
+      }
+      
       setData(rows);
     } catch (err) {
       console.error('[LanguageContext] fetchSheets error:', err);
@@ -160,10 +244,14 @@ export const LanguageProvider = ({ children }) => {
       loading,
       error,
       fetchSheets,
-    ]
+    ],
   );
 
-  return <LanguageContext.Provider value={contextValue}>{children}</LanguageContext.Provider>;
+  return (
+    <LanguageContext.Provider value={contextValue}>
+      {children}
+    </LanguageContext.Provider>
+  );
 };
 
 export const useLanguage = () => {

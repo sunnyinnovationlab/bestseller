@@ -105,24 +105,24 @@ export default function CreditsPage({ navigation }) {
       color: colors.text,
       lineHeight: 24,
     },
-    footer: {
+    sunnyBanner: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: 20,
-      paddingTop: 30,
-      paddingBottom: 20,
       marginTop: 20,
+      height: 70, // 높이 70px
+      backgroundColor: '#2d2d2d', // 진한 회색 배경
     },
     logoContainer: {
       alignItems: 'flex-start',
       flex: 1,
-      height: 144,
+      height: 70,
       justifyContent: 'center',
       overflow: 'hidden',
     },
     logoImage: {
-      height: 80,
+      height: 70,
       width: 120,
     },
     footerLinks: {
@@ -134,7 +134,7 @@ export default function CreditsPage({ navigation }) {
     },
     footerLink: {
       fontSize: 14,
-      color: colors.link,
+      color: '#ffffff', // 흰색 (다크모드/라이트모드 모두)
       fontWeight: '500',
     },
     footerDivider: {
@@ -205,14 +205,19 @@ export default function CreditsPage({ navigation }) {
           </View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
+        {/* 써니 로고 배너 - 높이 144px (xxhdpi 기준) */}
+        <View style={styles.sunnyBanner}>
           <View style={styles.logoContainer}>
-            <Image
-              source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
+            <TouchableOpacity
+              onPress={() => handleLinkPress('https://sunnyinnolab.com')}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           </View>
           <View style={styles.footerLinks}>
             <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74')}>

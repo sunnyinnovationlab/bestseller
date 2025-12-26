@@ -32,7 +32,16 @@ async function fetchPageBooks(browser) {
       const author = authorEl ? authorEl.innerText.trim() : 'Unknown Author';
 
       const imgEl = el.querySelector('img');
-      const image = imgEl ? imgEl.src : '';
+      const imageSrc = imgEl ? imgEl.src : '';
+
+      // 썸네일 URL을 고화질 이미지 URL로 변환
+      // Amazon 이미지 URL 패턴: ._AC_ULxxx_ 를 ._AC_UL1500_ 로 변경
+      const image = imageSrc
+        ? imageSrc
+            .replace(/\._AC_UL\d+_/g, '._AC_UL1500_')
+            .replace(/\._SX\d+_/g, '._SX1500_')
+            .replace(/\._SY\d+_/g, '._SY1500_')
+        : '';
 
       const linkEl = el.querySelector('a');
       const href = linkEl ? linkEl.getAttribute('href') : '';
@@ -91,9 +100,13 @@ async function fetchBookDetail(browser, link) {
         if (btn.click) btn.click();
       });
 
-      const bookDescDiv = document.querySelector('#bookDescription_feature_div');
+      const bookDescDiv = document.querySelector(
+        '#bookDescription_feature_div',
+      );
       if (bookDescDiv) {
-        const expanderContent = bookDescDiv.querySelector('.a-expander-content');
+        const expanderContent = bookDescDiv.querySelector(
+          '.a-expander-content',
+        );
         if (expanderContent && expanderContent.innerText.trim().length > 50) {
           description = expanderContent.innerText.trim();
         }
@@ -111,7 +124,9 @@ async function fetchBookDetail(browser, link) {
 
       let authorInfo = '';
 
-      const editorialDiv = document.querySelector('#editorialReviews_feature_div');
+      const editorialDiv = document.querySelector(
+        '#editorialReviews_feature_div',
+      );
       if (editorialDiv) {
         const sections = editorialDiv.querySelectorAll(
           '.a-section.a-spacing-small.a-padding-small',
@@ -158,7 +173,45 @@ async function fetchBookDetail(browser, link) {
         }
       });
 
-      const other = document.querySelector('#wayfinding-breadcrumbs_feature_div > ul')?.innerText.trim() || '';
+      const other =
+        document
+          .querySelector('#wayfinding-breadcrumbs_feature_div > ul')
+          ?.innerText.trim() || '';
+
+      // 상세 페이지에서 메인 이미지의 고화질 URL 가져오기
+      let highResImage = '';
+      const mainImageEl = document.querySelector(
+        '#landingImage, #imgBlkFront, #ebooksImgBlkFront',
+      );
+      if (mainImageEl) {
+        const dataSrc = mainImageEl.getAttribute('data-a-dynamic-image');
+        if (dataSrc) {
+          try {
+            const imageUrls = JSON.parse(dataSrc);
+            // 가장 높은 해상도의 이미지 찾기 (width * height가 가장 큰 것)
+            let maxResolution = 0;
+            let bestImageUrl = '';
+
+            for (const [url, dimensions] of Object.entries(imageUrls)) {
+              const resolution = dimensions[0] * dimensions[1]; // width * height
+              if (resolution > maxResolution) {
+                maxResolution = resolution;
+                bestImageUrl = url;
+              }
+            }
+
+            if (bestImageUrl) {
+              highResImage = bestImageUrl;
+            }
+          } catch (e) {
+            // JSON 파싱 실패 시 무시
+          }
+        }
+        // data-a-dynamic-image가 없으면 src 사용
+        if (!highResImage) {
+          highResImage = mainImageEl.src || '';
+        }
+      }
 
       return {
         description,
@@ -166,6 +219,7 @@ async function fetchBookDetail(browser, link) {
         publisher,
         publishDate,
         other,
+        highResImage,
       };
     });
 
@@ -174,7 +228,14 @@ async function fetchBookDetail(browser, link) {
   } catch (err) {
     await detailPage.close();
     console.error(`⚠️ 상세 정보 크롤링 실패 (${link}):`, err.message);
-    return { description: '', authorInfo: '', publisher: '', publishDate: '', other: '' };
+    return {
+      description: '',
+      authorInfo: '',
+      publisher: '',
+      publishDate: '',
+      other: '',
+      highResImage: '',
+    };
   }
 }
 
@@ -196,22 +257,35 @@ export default async function usScrapper() {
     const batchLinks = links.slice(i, i + concurrency);
 
     const results = await Promise.allSettled(
-      batchLinks.map(link => fetchBookDetail(browser, link))
+      batchLinks.map(link => fetchBookDetail(browser, link)),
     );
 
     results.forEach((res, idx) => {
       const data =
         res.status === 'fulfilled'
           ? res.value
-          : { description: '', authorInfo: '', publisher: '', publishDate: '' };
+          : {
+              description: '',
+              authorInfo: '',
+              publisher: '',
+              publishDate: '',
+              highResImage: '',
+            };
       batchBooks[idx].link = batchLinks[idx];
       batchBooks[idx].description = data.description || '';
       batchBooks[idx].contents = data.description || '';
       batchBooks[idx].authorInfo = data.authorInfo || '';
       batchBooks[idx].writerInfo = data.authorInfo || '';
       batchBooks[idx].other = data.other || '';
-      batchBooks[idx].publisher = data.publisher || batchBooks[idx].publisher || '';
+      batchBooks[idx].publisher =
+        data.publisher || batchBooks[idx].publisher || '';
       batchBooks[idx].publishDate = data.publishDate || '';
+
+      // 상세 페이지에서 가져온 고화질 이미지가 있으면 교체
+      if (data.highResImage) {
+        batchBooks[idx].image = data.highResImage;
+      }
+
       console.log(`${i + idx + 1}. ${batchBooks[idx].title} ✅`);
     });
   }
@@ -229,17 +303,19 @@ export default async function usScrapper() {
   const outputDir = path.join(process.cwd(), 'json_results');
   // Create folder if it doesn't exist
   if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true });
+    fs.mkdirSync(outputDir, { recursive: true });
   }
   const resultPath = path.join(outputDir, 'us.json');
-  fs.writeFileSync(resultPath, JSON.stringify(books.map(toPublicBook), null, 2), 'utf-8');
+  fs.writeFileSync(
+    resultPath,
+    JSON.stringify(books.map(toPublicBook), null, 2),
+    'utf-8',
+  );
 
   console.log(`✅ Crawled ${books.length} books and saved to us.json`);
   console.log(`⏱ Done in ${(Date.now() - startTime) / 1000}s`);
   console.log(`📆 Date ${date.getDate()}`);
 
-
-  
   await browser.close();
 }
 

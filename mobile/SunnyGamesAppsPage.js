@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from './ThemeContext';
@@ -14,22 +15,27 @@ const APP_LIST = [
   {
     name: 'Sky Peacemaker - Finger Force',
     link: 'https://skypeacemaker.onelink.me/YQxG/8s9sx66i',
+    icon: require('./assets/Sky Peacemaker - Finger Force Icon.png'),
   },
   {
     name: 'World Movie Trailer',
     link: 'https://wmt.onelink.me/YPN9/m428wgpq',
+    icon: require('./assets/World Movie Trailer New Icon.png'),
   },
   {
     name: 'Find Four',
     link: 'https://findfour.onelink.me/vurA/0tfteiuf',
+    icon: require('./assets/Find Four Icon.png'),
   },
   {
     name: 'Dual Flashlight',
     link: 'https://dualflashlight.onelink.me/7gkq/qpbc8y65',
+    icon: require('./assets/Dual Flashlight Icon.png'),
   },
   {
     name: 'decibella',
     link: 'https://decibella.onelink.me/Ve6i/vydwhkh4',
+    icon: require('./assets/decibella Icon 1024.png'),
   },
 ];
 
@@ -96,11 +102,21 @@ export default function SunnyGamesAppsPage({ navigation }) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    appIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      marginRight: 12,
+    },
+    appNameContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
     appName: {
       fontSize: 16,
       color: colors.text,
       fontWeight: '500',
-      flex: 1,
     },
     linkText: {
       fontSize: 16,
@@ -135,7 +151,16 @@ export default function SunnyGamesAppsPage({ navigation }) {
               activeOpacity={0.7}
               onPress={() => handleAppPress(app.link)}
             >
-              <Text style={styles.appName}>{app.name}</Text>
+              <View style={styles.appNameContainer}>
+                {app.icon && (
+                  <Image
+                    source={app.icon}
+                    style={styles.appIcon}
+                    resizeMode="cover"
+                  />
+                )}
+                <Text style={styles.appName}>{app.name}</Text>
+              </View>
               <Text style={styles.linkText}>Link</Text>
             </TouchableOpacity>
           ))}

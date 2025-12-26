@@ -1,77 +1,38 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, Image, Animated, BackHandler } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
-
-// 번역 데이터 (Google Sheets 기반)
-// 참조: https://docs.google.com/spreadsheets/d/1GoeMU5HbM7g2jujoO5vBI6Z1BH_EjUtnVmV9zWAKpHs/edit?gid=0#gid=0
-// Row 13: 제목 (title)
-// Row 14: 부제목 (subtitle)
-const translations = {
-  korean: {
-    title: '월드 베스트 셀러', // Row 13, Column A
-    subtitle: '전 세계가 주목하는 놀라운 책들을 발견해보세요!', // Row 14, Column A
-  },
-  english: {
-    title: 'World Best Sellers', // Row 13, Column B
-    subtitle: 'Discover amazing books the world is talking about!', // Row 14, Column B
-  },
-  japanese: {
-    title: 'ワールドベストセラーズ', // Row 13, Column C
-    subtitle: '世界中が注目する素晴らしい本を見つけよう！', // Row 14, Column C
-  },
-  chinese: {
-    title: '全球畅销书', // Row 13, Column D
-    subtitle: '探索那些吸引全球关注的精彩书籍！', // Row 14, Column D
-  },
-  traditionalChinese: {
-    title: '世界暢銷書', // Row 13, Column E
-    subtitle: '發現全球都在熱議的精彩書籍！', // Row 14, Column E
-  },
-  french: {
-    title: 'Meilleures ventes mondiales', // Row 13, Column F
-    subtitle:
-      'Découvrez des livres exceptionnels qui captivent le monde entier !', // Row 14, Column F
-  },
-  spanish: {
-    title: 'Superventas mundiales', // Row 13, Column G
-    subtitle:
-      'Descubre libros increíbles de los que todo el mundo está hablando', // Row 14, Column G
-  },
-};
+import { useLanguage } from './LanguageContext';
+import translationsData from './assets/translations.json';
 
 export default function SplashPage({ navigation }) {
-  const [language, setLanguage] = useState('english');
+  const { userLanguage } = useLanguage();
   const dot1Opacity = useRef(new Animated.Value(0.3)).current;
   const dot2Opacity = useRef(new Animated.Value(0.3)).current;
   const dot3Opacity = useRef(new Animated.Value(0.3)).current;
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
-  // 언어 설정 불러오기
+
+  // Back 키 비활성화
   useEffect(() => {
-    const loadLanguage = async () => {
-      try {
-        const savedLanguage = await AsyncStorage.getItem('appLanguage');
-        if (savedLanguage) {
-          // 저장된 언어를 번역 키로 매핑
-          const languageMap = {
-            Korean: 'korean',
-            English: 'english',
-            Japanese: 'japanese',
-            Chinese: 'chinese',
-            'Traditional Chinese': 'traditionalChinese',
-            French: 'french',
-            spanish: 'spanish',
-          };
-          setLanguage(languageMap[savedLanguage] || 'english');
-        }
-      } catch (error) {
-        console.error('[SplashPage] Failed to load language:', error);
-      }
-    };
-    loadLanguage();
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // 뒤로가기 키를 눌러도 아무 동작도 하지 않음
+      return true;
+    });
+
+    return () => backHandler.remove();
   }, []);
+
+  // Navigation beforeRemove 이벤트로 뒤로가기 방지
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // 뒤로가기 방지
+      e.preventDefault();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // 자동으로 메인 화면으로 이동 (2초 후)
   useEffect(() => {
@@ -140,7 +101,9 @@ export default function SplashPage({ navigation }) {
     return () => clearInterval(interval);
   }, [dot1Opacity, dot2Opacity, dot3Opacity]);
 
-  const currentTranslations = translations[language] || translations.english;
+  // JSON 파일에서 번역 가져오기
+  const title = translationsData?.splash?.title?.[userLanguage] || translationsData?.splash?.title?.[1] || 'World Best Sellers';
+  const subtitle = translationsData?.splash?.subtitle?.[userLanguage] || translationsData?.splash?.subtitle?.[1] || 'Discover amazing books the world is talking about!';
 
   return (
     <View style={styles.container}>
@@ -151,8 +114,8 @@ export default function SplashPage({ navigation }) {
           resizeMode="contain"
         />
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{currentTranslations.title}</Text>
-          <Text style={styles.subtitle}>{currentTranslations.subtitle}</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
         <View style={styles.dotsContainer}>
           <Animated.View style={[styles.dot, { opacity: dot1Opacity }]} />

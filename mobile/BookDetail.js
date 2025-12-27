@@ -568,12 +568,6 @@ export default function BookDetail({ route, navigation }) {
         <View style={styles.bookHeaderContainer}>
           <View style={styles.bookHeader}>
             <View style={styles.bookImageContainer}>
-              {/* 순위 배지 - 이미지 컨테이너 상단 */}
-              {book.rank && (
-                <View style={styles.rankBadgeTop}>
-                  <Text style={styles.rankText}>#{book.rank}</Text>
-                </View>
-              )}
               {book.image && book.image.trim() ? (
                 <TouchableOpacity
                   onPress={() => {
@@ -990,14 +984,6 @@ const getStyles = (colors, isDark) =>
       paddingVertical: 4,
       marginRight: 8,
       marginBottom: 4,
-    },
-    rankBadgeTop: {
-      backgroundColor: colors.link,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      alignSelf: 'flex-start',
-      marginBottom: 8,
     },
     rankText: {
       fontSize: 14,

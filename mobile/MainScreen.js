@@ -451,20 +451,10 @@ export default function MainScreen({ navigation }) {
 
         {/* 책 목록 */}
         <FlatList
-          ListHeaderComponent={
-            <View style={styles.adContainer}>
-              <MyAds type="adaptive" size={BannerAdSize.BANNER} />
-            </View>
-          }
           data={visibleBooks}
           renderItem={renderBookItem}
           keyExtractor={(item, index) => `${activeCountryTab}-${index}`}
           contentContainerStyle={styles.listContainer}
-          ListFooterComponent={
-            <View style={styles.adContainer}>
-              <MyAds type="adaptive" size={BannerAdSize.MEDIUM_RECTANGLE} />
-            </View>
-          }
         />
       </View>
     );
@@ -491,7 +481,18 @@ export default function MainScreen({ navigation }) {
     },
     contentContainer: {
       flex: 1,
-      paddingBottom: 80,
+      paddingBottom: 150, // 배너 광고 + 하단 네비게이션 공간 확보
+    },
+    fixedBannerAd: {
+      position: 'absolute',
+      bottom: 70, // 하단 네비게이션 위에 위치
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      zIndex: 999,
     },
     bottomNav: {
       position: 'absolute',
@@ -521,6 +522,11 @@ export default function MainScreen({ navigation }) {
     <View style={dynamicStyles.container}>
       <View style={dynamicStyles.contentContainer}>
         {renderContent()}
+      </View>
+      
+      {/* 고정 배너 광고 - 하단 네비게이션 위 */}
+      <View style={[dynamicStyles.fixedBannerAd, { backgroundColor: colors.primaryBackground, borderTopColor: colors.border }]}>
+        <MyAds type="adaptive" size={BannerAdSize.BANNER} />
       </View>
       
       {/* 하단 네비게이션 */}
@@ -658,7 +664,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 20,
-    paddingBottom: 100, // 네비게이션 바 높이만큼 여백 추가 (아이콘 24 + 텍스트 14 + 패딩 30 + 여유 32 = 약 100px)
+    paddingBottom: 170, // 배너 광고 + 네비게이션 바 높이만큼 여백 추가
   },
   bookItem: {
     flexDirection: 'row',

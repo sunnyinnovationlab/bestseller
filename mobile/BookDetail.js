@@ -90,6 +90,22 @@ const COUNTRY_CONFIG = {
 
 export default function BookDetail({ route, navigation }) {
   const { book, language: languageFromRoute } = route.params || {};
+
+  // 제목을 콜론으로 분리하는 함수
+  const splitTitle = (title) => {
+    if (!title) return { mainTitle: '', subtitle: '', fullTitle: '' };
+    const colonIndex = title.indexOf(':');
+    if (colonIndex === -1) {
+      return { mainTitle: title, subtitle: '', fullTitle: title };
+    }
+    return {
+      mainTitle: title.substring(0, colonIndex).trim(),
+      subtitle: title.substring(colonIndex + 1).trim(),
+      fullTitle: title
+    };
+  };
+
+  const titleParts = useMemo(() => splitTitle(book?.title), [book?.title]);
   const { columnHeaders, userLanguage } = useLanguage();
   const { isBookmarked, toggleBookmark } = useBookmark();
   const { colors, isDark } = useTheme();
@@ -460,6 +476,12 @@ export default function BookDetail({ route, navigation }) {
             <Text style={styles.tabContentTitle}>
               {getTabTitle('aboutBook')}
             </Text>
+            {/* 전체 제목(부제목 포함) 표시 */}
+            {titleParts.fullTitle && titleParts.subtitle && (
+              <Text style={styles.fullTitleText}>
+                {titleParts.fullTitle}
+              </Text>
+            )}
             {isEmptyContent(aboutBookContent) || (isAboutBookSameAsAuthor && isAboutBookSameAsMoreInfo) ? (
               <Text style={styles.tabContentText}>
                 {getTranslation('noInformation')}
@@ -628,10 +650,12 @@ export default function BookDetail({ route, navigation }) {
               )}
             </View>
             <View style={styles.bookInfo}>
-              {/* 제목 - 순위 포함 */}
+              {/* 제목 - 순위 포함, 콜론 앞부분만 표시 */}
               <View style={styles.titleContainer}>
                 <Text style={styles.title}>
-                  {book.rank ? `#${book.rank}: ${book.title}` : book.title}
+                  {book.rank 
+                    ? `#${book.rank}: ${titleParts.mainTitle}` 
+                    : titleParts.mainTitle}
                 </Text>
               </View>
               {/* 작가 클릭 - Wikidata 확인 후 클릭 가능 */}
@@ -1086,6 +1110,13 @@ const getStyles = (colors, isDark) =>
       fontWeight: 'bold',
       color: colors.text,
       marginBottom: 12,
+    },
+    fullTitleText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
+      lineHeight: 24,
     },
     tabContentText: {
       fontSize: 15,

@@ -6,4 +6,11 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <!-- AdMob Overlay Fix Theme -->
+    <style name="AdMobOverlayFixTheme" parent="@android:style/Theme.Translucent">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:fitsSystemWindows">true</item>
+    </style>
+
 </resources>

@@ -13,8 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
-import MyAds from './BannerAd';
-import { BannerAdSize } from 'react-native-google-mobile-ads';
 import { APP_VERSION } from './config/version';
 import translationsData from './assets/translations.json';
 
@@ -47,7 +45,7 @@ export default function SettingsPage({ navigation }) {
   const { language, setLanguage, userLanguage, setUserLanguage } = useLanguage();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSlideshowIntervalOpen, setIsSlideshowIntervalOpen] = useState(false);
-  const [slideshowInterval, setSlideshowInterval] = useState({ hours: 0, minutes: 0, seconds: 5 }); // 기본값: 5초
+  const [slideshowInterval, setSlideshowInterval] = useState({ minutes: 0, seconds: 5 }); // 기본값: 5초
   const { theme, updateTheme, isDark, colors } = useTheme();
   
   // JSON 파일에서 언어 옵션 가져오기
@@ -306,10 +304,9 @@ export default function SettingsPage({ navigation }) {
             </Text>
             <View style={styles.languageContainer}>
               <Text style={dynamicStyles.languageValue}>
-                {slideshowInterval.hours > 0 && `${slideshowInterval.hours}h `}
                 {slideshowInterval.minutes > 0 && `${slideshowInterval.minutes}m `}
                 {slideshowInterval.seconds > 0 && `${slideshowInterval.seconds}s`}
-                {slideshowInterval.hours === 0 && slideshowInterval.minutes === 0 && slideshowInterval.seconds === 0 && 'Not set'}
+                {slideshowInterval.minutes === 0 && slideshowInterval.seconds === 0 && 'Not set'}
               </Text>
               <Icon name={isSlideshowIntervalOpen ? "chevron-up" : "chevron-down"} size={20} color={colors.secondaryText} />
             </View>
@@ -317,34 +314,10 @@ export default function SettingsPage({ navigation }) {
 
           {isSlideshowIntervalOpen && (
             <View style={[dynamicStyles.slideshowIntervalPicker, { backgroundColor: colors.secondaryBackground }]}>
-              <Text style={[dynamicStyles.pickerLabel, { color: colors.text }]}>Hours</Text>
+              <Text style={[dynamicStyles.pickerLabel, { color: colors.text }]}>Minutes (1-10)</Text>
               <ScrollView style={styles.timePickerScrollView} nestedScrollEnabled={true}>
                 <View style={styles.timePickerRow}>
-                  {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
-                    <TouchableOpacity
-                      key={hour}
-                      style={[
-                        styles.timePickerButton,
-                        { borderColor: colors.border },
-                        slideshowInterval.hours === hour && { backgroundColor: colors.link },
-                      ]}
-                      onPress={() => setSlideshowInterval({ ...slideshowInterval, hours: hour })}
-                    >
-                      <Text style={[
-                        styles.timePickerButtonText,
-                        { color: slideshowInterval.hours === hour ? '#fff' : colors.text },
-                      ]}>
-                        {hour}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
-              <Text style={[dynamicStyles.pickerLabel, { color: colors.text, marginTop: 16 }]}>Minutes</Text>
-              <ScrollView style={styles.timePickerScrollView} nestedScrollEnabled={true}>
-                <View style={styles.timePickerRow}>
-                  {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((minute) => (
                     <TouchableOpacity
                       key={minute}
                       style={[
@@ -489,33 +462,29 @@ export default function SettingsPage({ navigation }) {
           <Text style={dynamicStyles.versionText}>v {APP_VERSION}</Text>
         </View>
 
-        {/* 써니 로고 배너 - 세로 배치 (이미지 참고) */}
+        {/* 써니 로고 배너 - 가로 배치 (다른 페이지와 동일) */}
         <View style={styles.sunnyBanner}>
-          <TouchableOpacity
-            onPress={() => handleLinkPress('https://sunnyinnolab.com')}
-            activeOpacity={0.7}
-            style={styles.logoButton}
-          >
-            <Image
-              source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+          <View style={styles.logoContainer}>
+            <TouchableOpacity
+              onPress={() => handleLinkPress('https://sunnyinnolab.com')}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={require('./assets/SIL_logo_setting_mini_xxhdpi.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
           <View style={styles.footerLinks}>
             <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74')}>
               <Text style={styles.footerLink}>Terms of Service</Text>
             </TouchableOpacity>
-            <View style={[styles.footerDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.footerDivider} />
             <TouchableOpacity onPress={() => handleLinkPress('https://marmalade-neptune-dbe.notion.site/Privacy-Policy-ced8ead72ced4d8791ca4a71a289dd6b')}>
               <Text style={styles.footerLink}>Privacy Policy</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* 광고 - 써니 배너 아래 */}
-        <View style={styles.adContainer}>
-          <MyAds type="adaptive" size={BannerAdSize.BANNER} />
         </View>
       </ScrollView>
     </View>
@@ -526,44 +495,41 @@ const styles = StyleSheet.create({
   headerIcon: {
     marginRight: 12,
   },
-  adContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-    marginBottom: 20
-  },
   sunnyBanner: {
-    flexDirection: 'column',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
     marginTop: 20,
+    height: 70, // 높이 70px
     backgroundColor: '#2d2d2d', // 진한 회색 배경
   },
-  logoButton: {
-    alignItems: 'center',
+  logoContainer: {
+    alignItems: 'flex-start',
+    flex: 1,
+    height: 70,
     justifyContent: 'center',
-    marginBottom: 12,
+    overflow: 'hidden',
   },
   logoImage: {
-    // 원래 크기 사용 (자동 크기)
-    resizeMode: 'contain',
+    height: 70,
+    width: 120,
   },
   footerLinks: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     gap: 16,
+    flex: 1,
   },
   footerLink: {
     fontSize: 14,
-    fontWeight: '500',
     color: '#ffffff', // 흰색 (다크모드/라이트모드 모두)
   },
   footerDivider: {
     width: 1,
     height: 14,
+    backgroundColor: '#ffffff',
   },
   scrollView: {
     flex: 1,

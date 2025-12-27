@@ -30,6 +30,9 @@ class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     
+    // WindowCompat을 사용하여 immersive mode 활성화
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    
     // Android 시스템 네비게이션 바 숨기기
     hideSystemNavigationBar()
   }
@@ -44,7 +47,7 @@ class MainActivity : ReactActivity() {
   private fun hideSystemNavigationBar() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       // Android 11 (API 30) 이상
-      window.insetsController?.let { controller ->
+      WindowCompat.getInsetsController(window, window.decorView)?.let { controller ->
         controller.hide(WindowInsetsCompat.Type.navigationBars())
         controller.systemBarsBehavior = 
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

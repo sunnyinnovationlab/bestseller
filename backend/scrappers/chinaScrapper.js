@@ -23,7 +23,10 @@ async function fetchPageBooks(browser) {
             const li = items[i];
             const detailHref = li.querySelector('div.infor h2 a')?.href || '';
             const title = li.querySelector('div.infor h2 a')?.innerText || '';
-            const image = li.querySelector('div.cover a img')?.src || '';
+            const img = li.querySelector('div.cover a img');
+            const image = img?.getAttribute('data-original') ||
+                        img?.getAttribute('data-src') ||
+                        img?.src || '';
             const author = li.querySelector('div.infor div.author a')?.innerText || '';
 
             if (title && author && image && detailHref) {
@@ -88,9 +91,9 @@ export default async function chinaScrapper() {
 
     const outputDir = path.join(process.cwd(), 'json_results');
         // Create folder if it doesn't exist
-        if (!fs.existsSync(outputDir)) {
+    if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
-        }
+    }
     const resultPath = path.join(outputDir, 'china.json');
     const sanitized = books.map(toPublicBook);
     fs.writeFileSync(resultPath, JSON.stringify(sanitized, null, 2), 'utf-8');

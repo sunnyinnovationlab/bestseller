@@ -105,7 +105,9 @@ function toPublicBook(raw) {
         link: clean(raw.detailHref),
         title: clean(raw.title),
         author: clean(raw.author),
-        writerInfo: clean(raw.writerInfo),
+        writerInfo: clean(
+            [raw.author, raw.writerInfo].filter(Boolean).join('\n')
+        ),
         description: clean(raw.description),
         other: clean(raw.other),
     };

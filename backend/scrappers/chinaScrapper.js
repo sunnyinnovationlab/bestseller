@@ -45,11 +45,7 @@ async function fetchBookDetail(browser, link) {
 
     const data = await detailPage.evaluate(() => {
         const description = document.querySelector('#brief p')?.innerText.trim() || '';
-        const extraSections = [
-            document.querySelector('#catalogSwitch')?.innerText.trim() || '',
-            document.querySelector('#mindbook')?.innerText.trim() || ''
-        ].filter(Boolean);
-        const other = extraSections.join('\n\n');
+        const other = document.querySelector('#specialist > p')?.innerText.trim() || '';
         const writerInfo = document.querySelector('#zuozhejianjie p')?.innerText.trim() || '';
         return { description, other, writerInfo };
     });

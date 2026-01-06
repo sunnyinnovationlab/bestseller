@@ -60,28 +60,70 @@ async function fetchBookDetail(browser, link) {
     await sleep(2000);
 
     const data = await detailPage.evaluate(() => {
-      const description =
-        document
-          .querySelector('#main_contents div.career_box p:nth-child(4)')
-          ?.innerText.trim() || '';
-      const other =
-        document
-          .querySelector('#main_contents div.career_box p:nth-child(2)')
-          ?.innerText.trim() || '';
-      const writerInfo =
-        document
-          .querySelector('#main_contents div.career_box p:nth-child(6)')
-          ?.innerText.trim() || '';
-
-      let highResImage = '';
-      const mainImg = document.querySelector(
-        '#main_contents div.career_box img, #main_contents .product_img img',
+      // 内容説明 (description) - <p itemprop="description">
+      let description = '';
+      const descEl = document.querySelector(
+        '#main_contents div.career_box p[itemprop="description"]',
       );
-      if (mainImg) {
-        const src = mainImg.src || '';
-        highResImage = src
-          .replace(/_w=\d+/g, '_w=1000')
-          .replace(/_h=\d+/g, '_h=1000');
+      if (descEl) {
+        description = descEl.innerText.trim();
+      }
+
+      // 出版社内容情報 (other) - <h3>出版社内容情報</h3> 다음의 <p>
+      let other = '';
+      const h3Elements = Array.from(
+        document.querySelectorAll('#main_contents div.career_box h3'),
+      );
+      const publisherH3 = h3Elements.find(h3 =>
+        h3.innerText.includes('出版社内容情報'),
+      );
+      if (publisherH3) {
+        // h3 다음 형제 p 태그 찾기
+        let nextEl = publisherH3.nextElementSibling;
+        while (nextEl) {
+          if (nextEl.tagName === 'P') {
+            other = nextEl.innerText.trim();
+            break;
+          }
+          nextEl = nextEl.nextElementSibling;
+        }
+      }
+
+      // 著者等紹介 (writerInfo) - <h3>著者等紹介</h3> 다음의 <p>
+      let writerInfo = '';
+      const authorH3 = h3Elements.find(h3 =>
+        h3.innerText.includes('著者等紹介'),
+      );
+      if (authorH3) {
+        // h3 다음 형제 p 태그 찾기
+        let nextEl = authorH3.nextElementSibling;
+        while (nextEl) {
+          if (nextEl.tagName === 'P') {
+            writerInfo = nextEl.innerText.trim();
+            break;
+          }
+          nextEl = nextEl.nextElementSibling;
+        }
+      }
+
+      // 고화질 이미지 - 클릭 가능한 링크에서 가져오기
+      let highResImage = '';
+      const imgLink = document.querySelector(
+        '#main_contents div.career_box a[href*="/images/goods/"]',
+      );
+      if (imgLink) {
+        highResImage = imgLink.href;
+      } else {
+        // 대체: img src에서 크기 파라미터 변경
+        const mainImg = document.querySelector(
+          '#main_contents div.career_box img, #main_contents .product_img img',
+        );
+        if (mainImg) {
+          const src = mainImg.src || '';
+          highResImage = src
+            .replace(/_w=\d+/g, '_w=1000')
+            .replace(/_h=\d+/g, '_h=1000');
+        }
       }
 
       return { description, other, writerInfo, highResImage };

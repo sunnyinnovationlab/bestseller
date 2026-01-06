@@ -74,20 +74,94 @@ async function fetchBookDetail(browser, link) {
       return text;
     }
 
+    // 책 소개 (description)
     const descriptionEl = document.querySelector(
       '#scrollSpyProdInfo div.product_detail_area.book_intro div.intro_bottom > div:last-child',
     );
     const description = getTextWithSpacing(descriptionEl);
 
-    const otherEl = document.querySelector(
-      '#scrollSpyProdInfo div.product_detail_area.book_contents div.auto_overflow_wrap div.auto_overflow_contents ul li',
-    );
-    const other = getTextWithSpacing(otherEl);
-
+    // 저자 소개 (writerInfo)
     const writerInfoEl = document.querySelector(
       '#scrollSpyProdInfo div.product_detail_area.product_person div.writer_info_box p',
     );
     const writerInfo = getTextWithSpacing(writerInfoEl);
+
+    // other: 작가의 말, 추천사, 책 속으로, 출판사서평
+    const otherSections = [];
+
+    // 작가의 말
+    const authorWordEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_author_word',
+    );
+    if (authorWordEl) {
+      const titleEl = authorWordEl.querySelector('.prod_title, h2');
+      const title = titleEl ? titleEl.innerText.trim() : '작가의 말';
+
+      const contentEl = authorWordEl.querySelector(
+        '.intro_bottom > div:last-child, .auto_overflow_contents',
+      );
+      const content = getTextWithSpacing(contentEl);
+
+      if (content) {
+        otherSections.push(`[${title}]\n${content}`);
+      }
+    }
+
+    // 추천사
+    const recommendEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_recommend',
+    );
+    if (recommendEl) {
+      const titleEl = recommendEl.querySelector('.prod_title, h2');
+      const title = titleEl ? titleEl.innerText.trim() : '추천사';
+
+      const contentEl = recommendEl.querySelector(
+        '.intro_bottom > div:last-child, .auto_overflow_contents',
+      );
+      const content = getTextWithSpacing(contentEl);
+
+      if (content) {
+        otherSections.push(`[${title}]\n${content}`);
+      }
+    }
+
+    // 책 속으로
+    const insideEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_inside',
+    );
+    if (insideEl) {
+      const titleEl = insideEl.querySelector('.prod_title, h2');
+      const title = titleEl ? titleEl.innerText.trim() : '책 속으로';
+
+      const contentEl = insideEl.querySelector(
+        '.intro_bottom > div:last-child, .auto_overflow_contents',
+      );
+      const content = getTextWithSpacing(contentEl);
+
+      if (content) {
+        otherSections.push(`[${title}]\n${content}`);
+      }
+    }
+
+    // 출판사 서평
+    const publishReviewEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_publish_review',
+    );
+    if (publishReviewEl) {
+      const titleEl = publishReviewEl.querySelector('.prod_title, h2');
+      const title = titleEl ? titleEl.innerText.trim() : '출판사 서평';
+
+      const contentEl = publishReviewEl.querySelector(
+        '.intro_bottom > div:last-child, .auto_overflow_contents',
+      );
+      const content = getTextWithSpacing(contentEl);
+
+      if (content) {
+        otherSections.push(`[${title}]\n${content}`);
+      }
+    }
+
+    const other = otherSections.join('\n\n---\n\n');
 
     return { description, other, writerInfo };
   });
@@ -133,6 +207,7 @@ export default async function kyoboScrapper() {
     link: book.detailHref || '',
     title: book.title || '',
     author: book.author || '',
+    publisher: book.publisher || '',
     writerInfo: book.writerInfo || '',
     description: book.description || '',
     other: book.other || '',

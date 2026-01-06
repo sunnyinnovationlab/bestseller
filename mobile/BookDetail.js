@@ -121,11 +121,9 @@ export default function BookDetail({ route, navigation }) {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  // 줄바꿈을 포함한 텍스트를 렌더링하는 헬퍼 함수
   const renderTextWithLineBreaks = text => {
     if (!text) return null;
 
-    // 1. 먼저 실제 줄바꿈이 있는지 확인
     if (text.includes('\n')) {
       const lines = text.split('\n');
       return lines.map((line, index) => (
@@ -136,11 +134,8 @@ export default function BookDetail({ route, navigation }) {
       ));
     }
 
-    // 2. 줄바꿈이 없으면 문장 단위로 분리
-    // 마침표, 느낌표, 물음표 뒤에 공백이 있으면 문장 끝으로 간주
     const sentences = text.match(/[^.!?]+[.!?]+\s*/g) || [text];
 
-    // 3. 문장을 적절히 그룹화 (3-4문장씩 묶어서 단락으로)
     const paragraphs = [];
     let currentParagraph = '';
     let sentenceCount = 0;
@@ -149,7 +144,6 @@ export default function BookDetail({ route, navigation }) {
       currentParagraph += sentences[i];
       sentenceCount++;
 
-      // 3-4문장마다 단락 구분
       if (sentenceCount >= 3) {
         paragraphs.push(currentParagraph.trim());
         currentParagraph = '';
@@ -157,17 +151,14 @@ export default function BookDetail({ route, navigation }) {
       }
     }
 
-    // 남은 텍스트 추가
     if (currentParagraph.trim()) {
       paragraphs.push(currentParagraph.trim());
     }
 
-    // 단락이 하나뿐이면 그냥 텍스트 반환
     if (paragraphs.length <= 1) {
       return text;
     }
 
-    // 단락 사이에 줄바꿈 추가
     return paragraphs.map((para, index) => (
       <React.Fragment key={index}>
         {para}
@@ -176,41 +167,30 @@ export default function BookDetail({ route, navigation }) {
     ));
   };
 
-  // 이미지 URL을 고해상도로 변환하고 정리하는 함수
   const getHighResImageUrl = imageUrl => {
     if (!imageUrl || !imageUrl.trim()) return imageUrl;
 
     let cleanedUrl = imageUrl.trim();
 
-    // Amazon 이미지 URL의 잘못된 형식 수정
-    // 예: _AC_UL600_SR600,400_ -> _AC_SL1500_ (고해상도)
-    // 예: _AC_UL320_ -> _AC_SL1500_
-    // 잘못된 쉼표가 포함된 SR 파라미터를 SL로 변경
     cleanedUrl = cleanedUrl.replace(/_SR(\d+),(\d+)_/g, '_SL1500_');
     cleanedUrl = cleanedUrl.replace(/_AC_UL\d+_SR\d+,\d+_/g, '_AC_SL1500_');
     cleanedUrl = cleanedUrl.replace(/_AC_UL\d+_/g, '_AC_SL1500_');
     cleanedUrl = cleanedUrl.replace(/_AC_SR\d+,\d+_/g, '_AC_SL1500_');
-    // 기존 크기 제한을 더 큰 크기로 변경 (하지만 원본이 더 나을 수 있으므로 주의)
-    // cleanedUrl = cleanedUrl.replace(/_SL\d+_/g, '_SL1500_');
-
-    // 이미지 URL에서 쿼리 파라미터나 크기 제한을 제거하여 원본 이미지 사용
-    // 일부 이미지 서비스는 URL 파라미터로 크기를 제한하므로 이를 제거
     try {
       const url = new URL(cleanedUrl);
-      // 크기 제한 파라미터 제거
+
       url.searchParams.delete('w');
       url.searchParams.delete('h');
       url.searchParams.delete('width');
       url.searchParams.delete('height');
       url.searchParams.delete('size');
       url.searchParams.delete('resize');
-      // 고해상도 파라미터 추가 (지원하는 경우)
+
       if (!url.searchParams.has('quality')) {
         url.searchParams.set('quality', '100');
       }
       return url.toString();
     } catch (e) {
-      // URL 파싱 실패 시 원본 URL 반환
       console.warn(
         '[BookDetail] URL parsing failed, using original:',
         imageUrl,
@@ -421,8 +401,7 @@ export default function BookDetail({ route, navigation }) {
         contents: book.contents || '',
         plot: book.plot || '',
         tableOfContents: book.tableOfContents || '',
-        moreInfo: book.moreInfo || '', // H행: 상세정보
-        // 한국어 필드
+        moreInfo: book.moreInfo || '',
         authorInfo_kr: book.authorInfo_kr || '',
         description_kr: book.description_kr || '',
         moreInfo_kr: book.moreInfo_kr || '',
@@ -463,7 +442,6 @@ export default function BookDetail({ route, navigation }) {
     return translation[userLanguage] || translation['1'] || key;
   };
 
-  // 탭 제목 가져오기
   const getTabTitle = tab => {
     switch (tab) {
       case 'author':
@@ -545,14 +523,6 @@ export default function BookDetail({ route, navigation }) {
           details?.plot ||
           details?.contents;
         const aboutBookContent = aboutBookContent_kr || aboutBookContent_en;
-
-        // 디버깅: 실제 데이터 확인
-        console.log('=== DEBUG aboutBook ===');
-        console.log('Raw text:', aboutBookContent);
-        console.log('Has newlines:', aboutBookContent?.includes('\n'));
-        console.log('Split result:', aboutBookContent?.split('\n').length);
-        console.log('First 100 chars:', aboutBookContent?.substring(0, 100));
-        console.log('======================');
 
         const authorContentForAboutBook =
           language === 'korean' && details?.authorInfo_kr

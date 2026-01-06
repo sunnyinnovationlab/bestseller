@@ -127,6 +127,19 @@ async function fetchBookDetail(browser, href) {
       })
       .catch(() => {});
 
+    // AUTHOR 탭 클릭
+    try {
+      const authorTabSelector =
+        'section.book-info-tabs.ws-tabs.span12 ul.tabs li[data-tab="author"] a';
+      const authorTab = await page.$(authorTabSelector);
+      if (authorTab) {
+        await authorTab.click();
+        await sleep(1000); // 탭 전환 대기
+      }
+    } catch (err) {
+      console.log('⚠️ Author tab not found or click failed');
+    }
+
     const data = await page.evaluate(() => {
       const collectText = root => {
         if (!root) return '';
@@ -156,23 +169,66 @@ async function fetchBookDetail(browser, href) {
         '#product-description',
       ]);
 
-      const writerInfoEl = document.querySelector(
-        'body > div.main-container > div.main-page.row > div:nth-child(2) > section.book-info-tabs.ws-tabs.span12 > div.tabs-content-container.clearfix > div.tab-content.tab-content-author.active > div > div > p:nth-child(2)',
+      // Author 탭에서 저자 정보 가져오기
+      let writerInfo = '';
+      const authorContent = document.querySelector(
+        '.tab-content.tab-content-author.active',
       );
+      if (authorContent) {
+        // author-preview-details 안의 p 태그들에서 텍스트 추출
+        const authorDetails = authorContent.querySelector(
+          '.author-preview-details',
+        );
+        if (authorDetails) {
+          const paragraphs = Array.from(authorDetails.querySelectorAll('p'))
+            .map(p => p.textContent.trim())
+            .filter(Boolean);
+          writerInfo = paragraphs.join('\n\n');
+        }
+      }
 
-      const writerInfo =
-        writerInfoEl?.textContent?.trim() ||
-        pickFirst([
+      if (!writerInfo) {
+        writerInfo = pickFirst([
           '#scope_author_biography',
           '#scope_book_author',
           '#scope_book_about_author',
           '[data-test="author-biography"]',
           '.author-biography',
         ]);
+      }
 
-      const waterstonesSays = document.querySelector(
-        'body > div.main-container > div.main-page.row > div:nth-child(2) > section.book-info-tabs.ws-tabs.span12 > div.tabs-content-container.clearfix > div.tab-content.content-text.tab-content-synopsis.active > div.two-columns > div.pdp-waterstones-says > p',
+      // other: Waterstones Says + Media Reviews
+      const otherSections = [];
+
+      // Waterstones Says
+      const waterstonesSaysEl = document.querySelector(
+        '.tab-content.tab-content-synopsis.active .pdp-waterstones-says p',
       );
+      if (waterstonesSaysEl) {
+        const waterstonesSaysText = waterstonesSaysEl.textContent.trim();
+        if (waterstonesSaysText) {
+          otherSections.push(`[Waterstones Says]\n${waterstonesSaysText}`);
+        }
+      }
+
+      // Media Reviews
+      const mediaReviewsEl = document.querySelector(
+        '.tab-content.tab-content-synopsis.active .pdp-media-reviews',
+      );
+      if (mediaReviewsEl) {
+        const reviewParagraphs = Array.from(
+          mediaReviewsEl.querySelectorAll('p'),
+        )
+          .map(p => p.textContent.trim())
+          .filter(Boolean);
+        if (reviewParagraphs.length > 0) {
+          otherSections.push(
+            `[Media Reviews]\n${reviewParagraphs.join('\n\n')}`,
+          );
+        }
+      }
+
+      const other = otherSections.join('\n\n---\n\n');
 
       // 상세 페이지에서 고화질 이미지 가져오기
       let highResImage = '';
@@ -197,7 +253,7 @@ async function fetchBookDetail(browser, href) {
       return {
         description,
         writerInfo,
-        other: waterstonesSays?.textContent?.trim() || '',
+        other,
         highResImage,
       };
     });
@@ -214,10 +270,8 @@ async function fetchBookDetail(browser, href) {
 async function extractBooksFromMainPage(page, limit) {
   await page.waitForSelector('div.book-preview', { timeout: 0 });
 
-  // 페이지를 천천히 스크롤해서 모든 이미지 로드
   await autoScroll(page);
 
-  // 이미지가 로드될 시간 추가
   await sleep(3000);
 
   const books = await page.evaluate(limit => {
@@ -241,22 +295,16 @@ async function extractBooksFromMainPage(page, limit) {
       let image = null;
       if (imgTag) {
         image = imgTag.getAttribute('data-src') || imgTag.src || null;
-        // cover404.png는 제외
         if (image && image.includes('cover404.png')) {
           image = null;
         }
-        // 이미지 URL을 최대 고화질로 변환
+
         if (image) {
-          // Waterstones 이미지 패턴을 최대 해상도로 변환
-          // 패턴 1: /jackets/400x/ -> /jackets/2000x/
           image = image.replace(/\/jackets\/\d+x\//, '/jackets/2000x/');
 
-          // 패턴 2: /400/600/123/ -> /2000/2000/123/
           image = image.replace(/\/\d+\/\d+\/([\w-]+)\//, (match, id) => {
             return `/2000/2000/${id}/`;
           });
-
-          // 추가 패턴: 파일명의 크기 지정자도 변경
           image = image.replace(/_\d+x\d+\./, '_2000x2000.');
           image = image.replace(/_\d+\./, '_2000.');
         }

@@ -46,24 +46,49 @@ async function fetchBookDetail(browser, link) {
   await detailPage.goto(link, { waitUntil: 'networkidle2' });
 
   const data = await detailPage.evaluate(() => {
-    const description =
-      document
-        .querySelector(
-          '#scrollSpyProdInfo div.product_detail_area.book_intro div.intro_bottom > div:last-child',
-        )
-        ?.innerText.trim() || '';
-    const other =
-      document
-        .querySelector(
-          '#scrollSpyProdInfo div.product_detail_area.book_contents div.auto_overflow_wrap div.auto_overflow_contents ul li',
-        )
-        ?.innerText.trim() || '';
-    const writerInfo =
-      document
-        .querySelector(
-          '#scrollSpyProdInfo div.product_detail_area.product_person div.writer_info_box p',
-        )
-        ?.innerText.trim() || '';
+    function getTextWithSpacing(element) {
+      if (!element) return '';
+
+      let text = element.innerHTML
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '')
+        .replace(/<div[^>]*>/gi, '')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<li[^>]*>/gi, '• ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .replace(/ +/g, ' ')
+        .replace(/\n +/g, '\n')
+        .replace(/ +\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      return text;
+    }
+
+    const descriptionEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_intro div.intro_bottom > div:last-child',
+    );
+    const description = getTextWithSpacing(descriptionEl);
+
+    const otherEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.book_contents div.auto_overflow_wrap div.auto_overflow_contents ul li',
+    );
+    const other = getTextWithSpacing(otherEl);
+
+    const writerInfoEl = document.querySelector(
+      '#scrollSpyProdInfo div.product_detail_area.product_person div.writer_info_box p',
+    );
+    const writerInfo = getTextWithSpacing(writerInfoEl);
+
     return { description, other, writerInfo };
   });
 
@@ -79,6 +104,7 @@ export default async function kyoboScrapper() {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
+  console.log('🚀 Fetching Korea (Kyobo) bestseller list...');
   const { books, links } = await fetchPageBooks(browser);
   const concurrency = 5;
 
@@ -113,7 +139,6 @@ export default async function kyoboScrapper() {
   });
 
   const outputDir = path.join(process.cwd(), 'json_results');
-  // Create folder if it doesn't exist
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -124,10 +149,9 @@ export default async function kyoboScrapper() {
     'utf-8',
   );
 
-  console.log(`✅ Crawled ${books.length} books`);
-  console.log(`Saved to ${resultPath}`);
-  console.log(`📆 Date ${Date.now().toString()}`);
-  console.log(`Done in ${(Date.now() - startTime) / 1000}s`);
+  console.log(`✅ Crawled ${books.length} books and saved to korea.json`);
+  console.log(`⏱ Done in ${(Date.now() - startTime) / 1000}s`);
+  console.log(`📆 Date ${date.getDate()}`);
 
   await browser.close();
 }

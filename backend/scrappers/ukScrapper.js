@@ -81,6 +81,12 @@ async function fetchBooksMain() {
       batch[idx].writerInfo = cleanText(details.writerInfo || '');
       batch[idx].other = cleanText(details.other || '');
       batch[idx].contents = batch[idx].description;
+
+      // 상세 페이지에서 가져온 고화질 이미지가 있으면 교체
+      if (details.highResImage) {
+        batch[idx].image = details.highResImage;
+      }
+
       console.log(
         `${batch[idx].rank ?? i + idx + 1}. ${
           batch[idx].title || 'Untitled'
@@ -168,10 +174,31 @@ async function fetchBookDetail(browser, href) {
         'body > div.main-container > div.main-page.row > div:nth-child(2) > section.book-info-tabs.ws-tabs.span12 > div.tabs-content-container.clearfix > div.tab-content.content-text.tab-content-synopsis.active > div.two-columns > div.pdp-waterstones-says > p',
       );
 
+      // 상세 페이지에서 고화질 이미지 가져오기
+      let highResImage = '';
+      const mainImageEl = document.querySelector(
+        '.book-image img, .product-image img, [itemprop="image"]',
+      );
+      if (mainImageEl) {
+        const imgSrc =
+          mainImageEl.getAttribute('data-src') || mainImageEl.src || '';
+        if (imgSrc && !imgSrc.includes('cover404.png')) {
+          // 이미지 URL을 최대 고화질로 변환
+          highResImage = imgSrc
+            .replace(/\/jackets\/\d+x\//, '/jackets/2000x/')
+            .replace(/\/\d+\/\d+\/([\w-]+)\//, (match, id) => {
+              return `/2000/2000/${id}/`;
+            })
+            .replace(/_\d+x\d+\./, '_2000x2000.')
+            .replace(/_\d+\./, '_2000.');
+        }
+      }
+
       return {
         description,
         writerInfo,
         other: waterstonesSays?.textContent?.trim() || '',
+        highResImage,
       };
     });
 
@@ -180,7 +207,7 @@ async function fetchBookDetail(browser, href) {
   } catch (err) {
     await page.close();
     console.error(`⚠️ 상세 정보 크롤링 실패 (${href}):`, err.message);
-    return { description: '', writerInfo: '', other: '' };
+    return { description: '', writerInfo: '', other: '', highResImage: '' };
   }
 }
 
@@ -217,6 +244,21 @@ async function extractBooksFromMainPage(page, limit) {
         // cover404.png는 제외
         if (image && image.includes('cover404.png')) {
           image = null;
+        }
+        // 이미지 URL을 최대 고화질로 변환
+        if (image) {
+          // Waterstones 이미지 패턴을 최대 해상도로 변환
+          // 패턴 1: /jackets/400x/ -> /jackets/2000x/
+          image = image.replace(/\/jackets\/\d+x\//, '/jackets/2000x/');
+
+          // 패턴 2: /400/600/123/ -> /2000/2000/123/
+          image = image.replace(/\/\d+\/\d+\/([\w-]+)\//, (match, id) => {
+            return `/2000/2000/${id}/`;
+          });
+
+          // 추가 패턴: 파일명의 크기 지정자도 변경
+          image = image.replace(/_\d+x\d+\./, '_2000x2000.');
+          image = image.replace(/_\d+\./, '_2000.');
         }
       }
 

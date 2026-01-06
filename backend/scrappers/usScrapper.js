@@ -34,8 +34,6 @@ async function fetchPageBooks(browser) {
       const imgEl = el.querySelector('img');
       const imageSrc = imgEl ? imgEl.src : '';
 
-      // 썸네일 URL을 고화질 이미지 URL로 변환
-      // Amazon 이미지 URL 패턴: ._AC_ULxxx_ 를 ._AC_UL1500_ 로 변경
       const image = imageSrc
         ? imageSrc
             .replace(/\._AC_UL\d+_/g, '._AC_UL1500_')
@@ -70,13 +68,11 @@ async function fetchBookDetail(browser, link) {
     await detailPage.goto(link, { waitUntil: 'networkidle2', timeout: 30000 });
     await sleep(2000);
 
-    // 스크롤하여 동적 콘텐츠 로드
     await detailPage.evaluate(() => {
       window.scrollTo(0, document.body.scrollHeight / 2);
     });
     await sleep(1000);
 
-    // expander 버튼 클릭
     try {
       const expanderButtons = await detailPage.$$(
         '[data-a-expander-name="book_description_expander"]',
@@ -85,11 +81,37 @@ async function fetchBookDetail(browser, link) {
         await btn.click();
         await sleep(500);
       }
-    } catch (err) {
-      // 무시
-    }
+    } catch (err) {}
 
     const data = await detailPage.evaluate(() => {
+      function getTextWithSpacing(element) {
+        if (!element) return '';
+
+        let text = element.innerHTML
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n\n')
+          .replace(/<\/div>/gi, '\n')
+          .replace(/<p[^>]*>/gi, '')
+          .replace(/<div[^>]*>/gi, '')
+          .replace(/<\/li>/gi, '\n')
+          .replace(/<li[^>]*>/gi, '• ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&apos;/g, "'")
+          .replace(/ +/g, ' ')
+          .replace(/\n +/g, '\n')
+          .replace(/ +\n/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+
+        return text;
+      }
+
       let description = '';
 
       // expander 버튼 클릭
@@ -107,15 +129,16 @@ async function fetchBookDetail(browser, link) {
         const expanderContent = bookDescDiv.querySelector(
           '.a-expander-content',
         );
-        if (expanderContent && expanderContent.innerText.trim().length > 50) {
-          description = expanderContent.innerText.trim();
+        if (expanderContent) {
+          description = getTextWithSpacing(expanderContent);
         }
 
-        if (!description) {
+        if (!description || description.length < 50) {
           const spans = bookDescDiv.querySelectorAll('span');
           for (let span of spans) {
-            if (span.innerText && span.innerText.trim().length > 50) {
-              description = span.innerText.trim();
+            const text = getTextWithSpacing(span);
+            if (text.length > 50) {
+              description = text;
               break;
             }
           }
@@ -133,7 +156,7 @@ async function fetchBookDetail(browser, link) {
         );
 
         for (let section of sections) {
-          const text = section.innerText.trim();
+          const text = getTextWithSpacing(section);
           if (text.length > 100) {
             authorInfo = text;
             break;
@@ -141,7 +164,7 @@ async function fetchBookDetail(browser, link) {
         }
 
         if (!authorInfo) {
-          const text = editorialDiv.innerText.trim();
+          const text = getTextWithSpacing(editorialDiv);
           if (text.length > 100) {
             authorInfo = text;
           }
@@ -178,7 +201,6 @@ async function fetchBookDetail(browser, link) {
           .querySelector('#wayfinding-breadcrumbs_feature_div > ul')
           ?.innerText.trim() || '';
 
-      // 상세 페이지에서 메인 이미지의 고화질 URL 가져오기
       let highResImage = '';
       const mainImageEl = document.querySelector(
         '#landingImage, #imgBlkFront, #ebooksImgBlkFront',
@@ -188,12 +210,11 @@ async function fetchBookDetail(browser, link) {
         if (dataSrc) {
           try {
             const imageUrls = JSON.parse(dataSrc);
-            // 가장 높은 해상도의 이미지 찾기 (width * height가 가장 큰 것)
             let maxResolution = 0;
             let bestImageUrl = '';
 
             for (const [url, dimensions] of Object.entries(imageUrls)) {
-              const resolution = dimensions[0] * dimensions[1]; // width * height
+              const resolution = dimensions[0] * dimensions[1];
               if (resolution > maxResolution) {
                 maxResolution = resolution;
                 bestImageUrl = url;
@@ -203,11 +224,8 @@ async function fetchBookDetail(browser, link) {
             if (bestImageUrl) {
               highResImage = bestImageUrl;
             }
-          } catch (e) {
-            // JSON 파싱 실패 시 무시
-          }
+          } catch (e) {}
         }
-        // data-a-dynamic-image가 없으면 src 사용
         if (!highResImage) {
           highResImage = mainImageEl.src || '';
         }
@@ -281,7 +299,6 @@ export default async function usScrapper() {
         data.publisher || batchBooks[idx].publisher || '';
       batchBooks[idx].publishDate = data.publishDate || '';
 
-      // 상세 페이지에서 가져온 고화질 이미지가 있으면 교체
       if (data.highResImage) {
         batchBooks[idx].image = data.highResImage;
       }
@@ -301,7 +318,6 @@ export default async function usScrapper() {
   });
 
   const outputDir = path.join(process.cwd(), 'json_results');
-  // Create folder if it doesn't exist
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -319,5 +335,4 @@ export default async function usScrapper() {
   await browser.close();
 }
 
-// Run directly
 usScrapper();

@@ -43,13 +43,11 @@ async function fetchPageBooks(browser) {
         li.querySelector('[class*="title"]')?.innerText ||
         '';
 
-      // 이미지
       const image =
         li.querySelector('div.a-section img')?.src ||
         li.querySelector('img[src*="amazon"]')?.src ||
         '';
 
-      // ✅ 작가 셀렉터 개선 - Amazon ES 구조에 맞춤
       let author =
         li.querySelector('a.a-size-small.a-link-child')?.innerText ||
         li.querySelector('.a-size-small.a-color-base')?.innerText ||
@@ -58,7 +56,6 @@ async function fetchPageBooks(browser) {
         li.querySelector('.p13n-sc-truncate-desktop-type2')?.innerText ||
         '';
 
-      // "de " 접두사 제거 (스페인어 "by" 의미)
       author = author.replace(/^de\s+/i, '').trim();
 
       if (title && detailHref) {
@@ -72,7 +69,6 @@ async function fetchPageBooks(browser) {
 
   console.log(`✅ Found ${books.length} books on main page`);
 
-  // 디버깅: 첫 3개 책 정보 출력
   books.slice(0, 3).forEach((book, i) => {
     console.log(
       `  ${i + 1}. ${book.title.substring(0, 50)}... by ${book.author}`,
@@ -90,7 +86,6 @@ async function fetchBookDetail(browser, link) {
     await sleep(1000);
 
     const data = await detailPage.evaluate(() => {
-      // 책 설명
       const description =
         document
           .querySelector('#bookDescription_feature_div div.a-expander-content')
@@ -103,7 +98,6 @@ async function fetchBookDetail(browser, link) {
           ?.innerText.trim() ||
         '';
 
-      // 리뷰/출판사 정보
       const reviewSection =
         document
           .querySelector('#editorialReviews_feature_div div.a-section')
@@ -113,7 +107,6 @@ async function fetchBookDetail(browser, link) {
           ?.innerText.trim() ||
         '';
 
-      // ✅ 작가 정보 개선 - "Follow" 및 작가 이름 제거
       let writerInfo =
         document
           .querySelector(
@@ -126,24 +119,16 @@ async function fetchBookDetail(browser, link) {
         document.querySelector('#author-profile-card')?.innerText.trim() ||
         '';
 
-      // ✅ "Follow" + 작가 이름 패턴 제거
-      // 예: "Follow\nDan Brown\n\nDan Brown is..." → "Dan Brown is..."
       if (writerInfo) {
-        // 1. "Follow" 단어 제거
         writerInfo = writerInfo.replace(/^Follow\s*/i, '');
-
-        // 2. 첫 줄(작가 이름) 제거 - 첫 번째 줄바꿈까지
         const lines = writerInfo.split('\n').filter(line => line.trim());
         if (lines.length > 1) {
-          // 첫 줄이 작가 이름이면 제거
           const firstLine = lines[0].trim();
-          // 작가 이름은 보통 짧고 대문자로 시작
           if (firstLine.length < 50 && /^[A-Z]/.test(firstLine)) {
             writerInfo = lines.slice(1).join('\n').trim();
           }
         }
 
-        // 3. "Read more about this author" 같은 문구 제거
         writerInfo = writerInfo.replace(/Read more about .*$/i, '').trim();
         writerInfo = writerInfo.replace(/Discover more of .*$/i, '').trim();
       }
@@ -215,7 +200,6 @@ export default async function spainScrapper() {
     }
   }
 
-  // backend/json_results에 저장
   const outputDir = path.join(__dirname, '..', 'json_results');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });

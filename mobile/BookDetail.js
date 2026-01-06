@@ -121,6 +121,61 @@ export default function BookDetail({ route, navigation }) {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
+  // 줄바꿈을 포함한 텍스트를 렌더링하는 헬퍼 함수
+  const renderTextWithLineBreaks = text => {
+    if (!text) return null;
+
+    // 1. 먼저 실제 줄바꿈이 있는지 확인
+    if (text.includes('\n')) {
+      const lines = text.split('\n');
+      return lines.map((line, index) => (
+        <React.Fragment key={index}>
+          {line}
+          {index < lines.length - 1 && '\n'}
+        </React.Fragment>
+      ));
+    }
+
+    // 2. 줄바꿈이 없으면 문장 단위로 분리
+    // 마침표, 느낌표, 물음표 뒤에 공백이 있으면 문장 끝으로 간주
+    const sentences = text.match(/[^.!?]+[.!?]+\s*/g) || [text];
+
+    // 3. 문장을 적절히 그룹화 (3-4문장씩 묶어서 단락으로)
+    const paragraphs = [];
+    let currentParagraph = '';
+    let sentenceCount = 0;
+
+    for (let i = 0; i < sentences.length; i++) {
+      currentParagraph += sentences[i];
+      sentenceCount++;
+
+      // 3-4문장마다 단락 구분
+      if (sentenceCount >= 3) {
+        paragraphs.push(currentParagraph.trim());
+        currentParagraph = '';
+        sentenceCount = 0;
+      }
+    }
+
+    // 남은 텍스트 추가
+    if (currentParagraph.trim()) {
+      paragraphs.push(currentParagraph.trim());
+    }
+
+    // 단락이 하나뿐이면 그냥 텍스트 반환
+    if (paragraphs.length <= 1) {
+      return text;
+    }
+
+    // 단락 사이에 줄바꿈 추가
+    return paragraphs.map((para, index) => (
+      <React.Fragment key={index}>
+        {para}
+        {index < paragraphs.length - 1 && '\n\n'}
+      </React.Fragment>
+    ));
+  };
+
   // 이미지 URL을 고해상도로 변환하고 정리하는 함수
   const getHighResImageUrl = imageUrl => {
     if (!imageUrl || !imageUrl.trim()) return imageUrl;
@@ -422,14 +477,12 @@ export default function BookDetail({ route, navigation }) {
     }
   };
 
-  // 내용이 비어있거나 유효하지 않은지 확인하는 함수
   const isEmptyContent = content => {
     if (!content) return true;
     const trimmed = content.trim();
     return trimmed === '' || trimmed.length === 0;
   };
 
-  // 내용이 같은지 확인하는 함수
   const isSameContent = (content1, content2) => {
     if (!content1 || !content2) return false;
     return content1.trim() === content2.trim();
@@ -443,7 +496,6 @@ export default function BookDetail({ route, navigation }) {
             ? details.authorInfo_kr
             : details?.authorInfo;
 
-        // About Book이나 More Info와 내용이 같은지 확인
         const aboutBookContentForAuthor =
           language === 'korean' && details?.description_kr
             ? details.description_kr
@@ -468,12 +520,17 @@ export default function BookDetail({ route, navigation }) {
         return (
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>{getTabTitle('author')}</Text>
-            <Text style={styles.tabContentText}>
-              {isEmptyContent(authorContent) ||
-              (isAuthorSameAsAboutBook && isAuthorSameAsMoreInfo)
-                ? getTranslation('noInformation')
-                : authorContent || getTranslation('noInformation')}
-            </Text>
+            {isEmptyContent(authorContent) ||
+            isAuthorSameAsAboutBook ||
+            isAuthorSameAsMoreInfo ? (
+              <Text style={styles.tabContentText}>
+                {getTranslation('noInformation')}
+              </Text>
+            ) : (
+              <Text style={styles.tabContentText}>
+                {renderTextWithLineBreaks(authorContent)}
+              </Text>
+            )}
           </View>
         );
       }
@@ -489,7 +546,14 @@ export default function BookDetail({ route, navigation }) {
           details?.contents;
         const aboutBookContent = aboutBookContent_kr || aboutBookContent_en;
 
-        // Author나 More Info와 내용이 같은지 확인
+        // 디버깅: 실제 데이터 확인
+        console.log('=== DEBUG aboutBook ===');
+        console.log('Raw text:', aboutBookContent);
+        console.log('Has newlines:', aboutBookContent?.includes('\n'));
+        console.log('Split result:', aboutBookContent?.split('\n').length);
+        console.log('First 100 chars:', aboutBookContent?.substring(0, 100));
+        console.log('======================');
+
         const authorContentForAboutBook =
           language === 'korean' && details?.authorInfo_kr
             ? details.authorInfo_kr
@@ -513,18 +577,20 @@ export default function BookDetail({ route, navigation }) {
             <Text style={styles.tabContentTitle}>
               {getTabTitle('aboutBook')}
             </Text>
-            {/* 전체 제목(부제목 포함) 표시 */}
             {titleParts.fullTitle && titleParts.subtitle && (
               <Text style={styles.fullTitleText}>{titleParts.fullTitle}</Text>
             )}
             {isEmptyContent(aboutBookContent) ||
-            (isAboutBookSameAsAuthor && isAboutBookSameAsMoreInfo) ? (
+            isAboutBookSameAsAuthor ||
+            isAboutBookSameAsMoreInfo ? (
               <Text style={styles.tabContentText}>
                 {getTranslation('noInformation')}
               </Text>
             ) : (
               <View>
-                <Text style={styles.tabContentText}>{aboutBookContent}</Text>
+                <Text style={styles.tabContentText}>
+                  {renderTextWithLineBreaks(aboutBookContent)}
+                </Text>
                 {(details?.publisher || book.publisher) && (
                   <View style={styles.infoSection}>
                     <Text style={styles.tabContentSubtitle}>
@@ -580,12 +646,17 @@ export default function BookDetail({ route, navigation }) {
             <Text style={styles.tabContentTitle}>
               {getTabTitle('moreInfo')}
             </Text>
-            <Text style={styles.tabContentText}>
-              {isEmptyContent(moreInfoContent) ||
-              (isMoreInfoSameAsAuthor && isMoreInfoSameAsAboutBook)
-                ? getTranslation('noInformation')
-                : moreInfoContent || getTranslation('noInformation')}
-            </Text>
+            {isEmptyContent(moreInfoContent) ||
+            isMoreInfoSameAsAuthor ||
+            isMoreInfoSameAsAboutBook ? (
+              <Text style={styles.tabContentText}>
+                {getTranslation('noInformation')}
+              </Text>
+            ) : (
+              <Text style={styles.tabContentText}>
+                {renderTextWithLineBreaks(moreInfoContent)}
+              </Text>
+            )}
             <View
               style={[styles.adContainer, { marginTop: 20, marginBottom: 20 }]}
             >
@@ -601,7 +672,6 @@ export default function BookDetail({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 상단 헤더 */}
       <View style={styles.topHeader}>
         <TouchableOpacity
           style={styles.closeButton}
@@ -630,7 +700,6 @@ export default function BookDetail({ route, navigation }) {
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}
       >
-        {/* 책 커버 및 정보 */}
         <View style={styles.bookHeaderContainer}>
           <View style={styles.bookHeader}>
             <View style={styles.bookImageContainer}>
@@ -676,7 +745,6 @@ export default function BookDetail({ route, navigation }) {
                   <Text style={styles.placeholderText}>No Image</Text>
                 </View>
               )}
-              {/* View on Store 버튼 - 이미지 아래 */}
               {book.link && (
                 <TouchableOpacity
                   style={styles.viewStoreButtonBelowImage}
@@ -703,7 +771,6 @@ export default function BookDetail({ route, navigation }) {
               )}
             </View>
             <View style={styles.bookInfo}>
-              {/* 제목 - 순위 포함, 콜론 앞부분만 표시 */}
               <View style={styles.titleContainer}>
                 <Text style={styles.title}>
                   {book.rank
@@ -711,7 +778,6 @@ export default function BookDetail({ route, navigation }) {
                     : titleParts.mainTitle}
                 </Text>
               </View>
-              {/* 작가 클릭 - Wikidata 확인 후 클릭 가능 */}
               <TouchableOpacity onPress={() => searchAuthor(book.author)}>
                 <Text style={styles.author}>
                   {language === 'korean' && book.author_kr
@@ -731,7 +797,6 @@ export default function BookDetail({ route, navigation }) {
           </View>
         </View>
 
-        {/* 탭 네비게이션 */}
         <View style={styles.tabNavigation}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'author' && styles.activeTab]}
@@ -774,7 +839,6 @@ export default function BookDetail({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* 탭 컨텐츠 */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4285F4" />
@@ -785,7 +849,6 @@ export default function BookDetail({ route, navigation }) {
         )}
       </ScrollView>
 
-      {/* Wikipedia 모달 */}
       {wikiModalVisible && (
         <Modal
           visible={wikiModalVisible}
@@ -807,8 +870,7 @@ export default function BookDetail({ route, navigation }) {
                 </TouchableOpacity>
                 <Text style={styles.modalTitle} numberOfLines={1}>
                   {wikiType === 'title'
-                    ? // 앱 언어에 따라 번역된 제목 표시
-                      appLanguage === 'Korean' && book.title_kr
+                    ? appLanguage === 'Korean' && book.title_kr
                       ? book.title_kr
                       : appLanguage === 'Japanese' && book.title_ja
                       ? book.title_ja
@@ -819,8 +881,7 @@ export default function BookDetail({ route, navigation }) {
                       : appLanguage === 'Spanish' && book.title_es
                       ? book.title_es
                       : book.title
-                    : // 작가명도 동일하게
-                    appLanguage === 'Korean' && book.author_kr
+                    : appLanguage === 'Korean' && book.author_kr
                     ? book.author_kr
                     : appLanguage === 'Japanese' && book.author_ja
                     ? book.author_ja
@@ -889,7 +950,6 @@ export default function BookDetail({ route, navigation }) {
         </Modal>
       )}
 
-      {/* 이미지 확대 모달 */}
       {imageModalVisible && book.image && book.image.trim() && (
         <Modal
           visible={imageModalVisible}
@@ -941,7 +1001,6 @@ export default function BookDetail({ route, navigation }) {
   );
 }
 
-// 스타일을 함수로 변경하여 테마에 따라 동적으로 생성
 const getStyles = (colors, isDark) =>
   StyleSheet.create({
     container: {
@@ -1270,9 +1329,6 @@ const getStyles = (colors, isDark) =>
     imageModalImage: {
       width: Dimensions.get('window').width - 40,
       height: Dimensions.get('window').height - 120,
-      // 고해상도 이미지 표시를 위한 설정
-      // React Native Image는 자동으로 최적 해상도를 선택하지만,
-      // 원본 이미지 URL이 고해상도인 경우 더 선명하게 표시됨
     },
     imageModalPlaceholder: {
       width: Dimensions.get('window').width - 40,

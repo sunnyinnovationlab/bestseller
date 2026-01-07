@@ -18,7 +18,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install backend dependencies
+        working-directory: backend
         run: npm ci
 
       - name: Write Google service account key
@@ -31,13 +32,27 @@ jobs:
           DAY=$(TZ="Asia/Seoul" date +%u)
 
           case "$DAY" in
-            1) backend/scrappers/kyoboScrapper.js" SCRIPTS="backend/scrappers/spainScrapper.js ;;
-            2) SCRIPTS="backend/scrappers/usScrapper.js" ;;
-            3) SCRIPTS="backend/scrappers/japanScrapper2.js" ;;
-            4) SCRIPTS="backend/scrappers/ukScrapper.js" SCRIPTS="backend/scrappers/taiwanScrapper.js" ;;
-            5) SCRIPTS="backend/scrappers/chinaScrapper.js" ;;
-            6) SCRIPTS="backend/scrappers/taiwanScrapper.js" ;;
-            7) SCRIPTS="backend/scrappers/franceScrapper.js" ;;
+            1)
+              SCRIPTS="backend/scrappers/spainScrapper.js backend/scrappers/kyoboScrapper.js"
+              ;;
+            2)
+              SCRIPTS="backend/scrappers/usScrapper.js"
+              ;;
+            3)
+              SCRIPTS="backend/scrappers/japanScrapper2.js backend/scrappers/taiwanScrapper.js"
+              ;;
+            4)
+              SCRIPTS="backend/scrappers/ukScrapper.js"
+              ;;
+            5)
+              SCRIPTS="backend/scrappers/chinaScrapper.js"
+              ;;
+            6)
+              SCRIPTS="backend/scrappers/taiwanScrapper.js"
+              ;;
+            7)
+              SCRIPTS="backend/scrappers/franceScrapper.js"
+              ;;
           esac
 
           echo "SCRIPTS=$SCRIPTS" >> $GITHUB_OUTPUT

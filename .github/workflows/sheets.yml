@@ -1,8 +1,8 @@
-name: Web Scrapper Runner Test
+name: Web Scrapper Runner
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    - cron: "0 23 * * *"   # 23:00 UTC = 08:00 KST
   workflow_dispatch:
 
 jobs:
@@ -16,53 +16,38 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
 
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
 
-      - name: Determine script to run
+      - name: Determine scripts to run
         id: pick
         run: |
           DAY=$(TZ="Asia/Seoul" date +%u)
 
           case "$DAY" in
-            1)
-              SCRIPTS="backend/scrappers/spainScrapper.js backend/scrappers/kyoboScrapper.js"
-              ;;
-            2)
-              SCRIPTS="backend/scrappers/usScrapper.js"
-              ;;
-            3)
-              SCRIPTS="backend/scrappers/japanScrapper2.js backend/scrappers/taiwanScrapper.js"
-              ;;
-            4)
-              SCRIPTS="backend/scrappers/ukScrapper.js"
-              ;;
-            5)
-              SCRIPTS="backend/scrappers/chinaScrapper.js"
-              ;;
-            6)
-              SCRIPTS="backend/scrappers/taiwanScrapper.js"
-              ;;
-            7)
-              SCRIPTS="backend/scrappers/franceScrapper.js"
-              ;;
+            1)SCRIPTS="backend/scrappers/usScrapper.js backend/scrappers/kyoboScrapper.js";;
+            2)SCRIPTS="backend/scrappers/japanScrapper.js";;
+            3)SCRIPTS="backend/scrappers/ukScrapper.js";;
+            4)SCRIPTS="backend/scrappers/spainScrapper.js";;
+            5)SCRIPTS="backend/scrappers/chinaScrapper.js";;
+            6)SCRIPTS="backend/scrappers/franceScrapper.js";;
+            7)SCRIPTS="backend/scrappers/taiwanScrapper.js";;
           esac
 
           echo "SCRIPTS=$SCRIPTS" >> $GITHUB_OUTPUT
           echo "Running scripts: $SCRIPTS"
 
       - name: Run the day-specific scraper(s)
-        env:
-          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
         run: |
           for script in ${{ steps.pick.outputs.SCRIPTS }}; do
+            echo "▶ Running $script"
             node $script
           done
 
-      - name: Upload results to Google
+      - name: Upload results to Google Sheets
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
         run: node backend/uploadToGoogle.js

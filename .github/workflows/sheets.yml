@@ -2,7 +2,7 @@ name: Web Scrapper Runner Test
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    # - cron: '0 23 * * *'
   workflow_dispatch:
 
 jobs:
@@ -27,27 +27,27 @@ jobs:
           DAY=$(TZ="Asia/Seoul" date +%u)
           echo "DAY=$DAY" >> $GITHUB_OUTPUT
 
-          if [ "$DAY" -eq 1 ]; then
+          # if [ "$DAY" -eq 1 ]; then
             echo "SCRAPER=backend/scrappers/kyoboScrapper.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 2 ]; then
+          # fi
+          # if [ "$DAY" -eq 2 ]; then
             echo "SCRAPER=backend/scrappers/usScrapper.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 3 ]; then
+          # fi
+          # if [ "$DAY" -eq 3 ]; then
             echo "SCRAPER=backend/scrappers/japanScrapper2.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 4 ]; then
+          # fi
+          # if [ "$DAY" -eq 4 ]; then
             echo "SCRAPER=backend/scrappers/ukScrapper.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 5 ]; then
+          # fi
+          # if [ "$DAY" -eq 5 ]; then
             echo "SCRAPER=backend/scrappers/chinaScrapper.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 6 ]; then
+          # fi
+          # if [ "$DAY" -eq 6 ]; then
             echo "SCRAPER=backend/scrappers/taiwanScrapper.js" >> $GITHUB_OUTPUT
-          fi
-          if [ "$DAY" -eq 7 ]; then
-            echo "SCRAPER=backend/scrappers/franceScrapper.js backend/scrappers/spainScrapper.js" >> $GITHUB_OUTPUT
-          fi
+          # fi
+          # if [ "$DAY" -eq 7 ]; then
+            echo "SCRAPER=backend/scrappers/franceScrapper.js" >> $GITHUB_OUTPUT
+          # fi
 
       - name: Run the day-specific scraper
         run: node ${{ steps.pick.outputs.SCRAPER }}

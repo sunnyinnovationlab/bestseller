@@ -6,7 +6,7 @@ import 'dotenv/config';
 
 function readBooksJSON(filename) {
   const jsonPath = path.join(process.cwd(), 'backend', 'json_results', filename);
-  
+
   if (!fs.existsSync(jsonPath)) {
     console.warn(`⚠️ File not found: ${jsonPath}`);
     return [];
@@ -30,10 +30,6 @@ function readBooksJSON(filename) {
 }
 
 async function batchUpdateValues(spreadsheetId, valueInputOption, data) {
-  const key = JSON.parse(
-    fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8')
-  );
-
   const auth = new GoogleAuth({
     credentials: key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],

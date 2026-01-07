@@ -28,9 +28,9 @@ jobs:
           DAY=$(TZ="Asia/Seoul" date +%u)
 
           case "$DAY" in
-            1)SCRIPTS="backend/scrappers/usScrapper.js backend/scrappers/kyoboScrapper.js";;
+            1)SCRIPTS="backend/scrappers/ukScrapper.js backend/scrappers/kyoboScrapper.js";;
             2)SCRIPTS="backend/scrappers/japanScrapper.js";;
-            3)SCRIPTS="backend/scrappers/ukScrapper.js";;
+            3)SCRIPTS="backend/scrappers/usScrapper.js";;
             4)SCRIPTS="backend/scrappers/spainScrapper.js";;
             5)SCRIPTS="backend/scrappers/chinaScrapper.js";;
             6)SCRIPTS="backend/scrappers/franceScrapper.js";;

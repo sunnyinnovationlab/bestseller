@@ -30,6 +30,8 @@ function readBooksJSON(filename) {
 }
 
 async function batchUpdateValues(spreadsheetId, valueInputOption, data) {
+  const key = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+
   const auth = new GoogleAuth({
     credentials: key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],

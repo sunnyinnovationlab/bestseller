@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ScrollView,
   BackHandler,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,15 +19,19 @@ import LoadingScreen from './LoadingScreen';
 import { useBookmark } from './BookmarkContext';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
-import { BannerAdSize, InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
+import { BannerAdSize, RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 import MyAds from './BannerAd';
 import translationsData from './assets/translations.json';
 
-const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3940256099942544/1033173712';
+const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-3940256099942544/5224354917';
 
-const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
   requestNonPersonalizedAdsOnly: true,
 });
+
+// 12시간 무료 기간 상수
+const FREE_PERIOD_MS = 12 * 60 * 60 * 1000; // 12시간
+const REWARD_AD_WATCHED_KEY = 'rewardAdWatchedTimestamp';
 
 const COUNTRY_TABS = [
   { label: 'KOR', index: 0 },
@@ -73,8 +78,15 @@ const COUNTRY_INDEX_TO_LABEL_COLUMN = {
 };
 
 export default function MainScreen({ navigation }) {
+  console.log('[MainScreen] ===== MainScreen component rendering =====');
+  
   const [activeTab, setActiveTab] = useState('home');
-  const [loaded, setLoaded] = useState(false);
+  const [rewardedLoaded, setRewardedLoaded] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [pendingLanguageChange, setPendingLanguageChange] = useState(null);
+  const [rewardEarned, setRewardEarned] = useState(false);
+  // 메모리 백업 (AsyncStorage가 가득 찬 경우를 대비)
+  const watchedTimestampRef = React.useRef(null);
 
   // Back 키 비활성화
   useEffect(() => {
@@ -96,23 +108,222 @@ export default function MainScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
+  // 앱 시작 시 오래된 캐시 정리 (AsyncStorage 공간 확보)
   useEffect(() => {
-    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      setLoaded(true);
+    const cleanupOldCache = async () => {
+      try {
+        console.log('[MainScreen] Starting aggressive cache cleanup...');
+        const allKeys = await AsyncStorage.getAllKeys();
+        console.log('[MainScreen] Total AsyncStorage keys:', allKeys.length);
+        
+        // sheet_data_로 시작하는 키들만 필터링
+        const cacheKeys = allKeys.filter(key => key.startsWith('sheet_data_'));
+        console.log('[MainScreen] Found cache keys:', cacheKeys.length);
+        
+        let cleanedCount = 0;
+        const now = Date.now();
+        const CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+        
+        // 가장 오래된 캐시부터 삭제 (공간이 부족하면 최근 것도 삭제)
+        const cacheEntries = [];
+        
+        for (const key of cacheKeys) {
+          try {
+            const cachedData = await AsyncStorage.getItem(key);
+            if (cachedData) {
+              try {
+                const { timestamp } = JSON.parse(cachedData);
+                cacheEntries.push({ key, timestamp });
+              } catch (parseErr) {
+                // 파싱 에러면 바로 삭제 대상에 추가
+                cacheEntries.push({ key, timestamp: 0 });
+              }
+            }
+          } catch (err) {
+            // 읽기 에러면 삭제 대상에 추가
+            cacheEntries.push({ key, timestamp: 0 });
+          }
+        }
+        
+        // 타임스탬프 기준으로 정렬 (오래된 것부터)
+        cacheEntries.sort((a, b) => a.timestamp - b.timestamp);
+        
+        // 24시간 이상 된 캐시는 모두 삭제
+        // 그리고 공간이 부족할 수 있으니 가장 오래된 것부터 최대 3개까지 더 삭제
+        for (let i = 0; i < cacheEntries.length; i++) {
+          const { key, timestamp } = cacheEntries[i];
+          const shouldDelete = timestamp === 0 || 
+                               (now - timestamp > CACHE_TTL) || 
+                               (i < 3 && now - timestamp > CACHE_TTL / 2); // 가장 오래된 3개는 12시간 이상이면 삭제
+          
+          if (shouldDelete) {
+            try {
+              await AsyncStorage.removeItem(key);
+              cleanedCount++;
+              console.log('[MainScreen] Removed cache:', key, 'age:', timestamp ? Math.round((now - timestamp) / (60 * 60 * 1000)) + 'h' : 'invalid');
+            } catch (removeErr) {
+              console.warn('[MainScreen] Failed to remove cache key:', key, removeErr.message);
+            }
+          }
+        }
+        
+        console.log('[MainScreen] Cache cleanup completed, removed:', cleanedCount, 'items');
+      } catch (error) {
+        console.error('[MainScreen] Cache cleanup error:', error);
+      }
+    };
+    
+    cleanupOldCache();
+  }, []);
+
+  // 리워드 광고 로드
+  useEffect(() => {
+    console.log('[MainScreen] ===== useEffect: Component mounted, initializing rewarded ad =====');
+    console.log('[MainScreen] Rewarded ad unit ID:', rewardedAdUnitId);
+    console.log('[MainScreen] Is DEV mode:', __DEV__);
+    
+    // 광고 로드 시작
+    rewarded.load();
+    console.log('[MainScreen] Called rewarded.load()');
+    
+    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      console.log('[MainScreen] ===== Rewarded ad loaded successfully =====');
+      setRewardedLoaded(true);
     });
 
-    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      setLoaded(false);
-      interstitial.load();
+    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, async (reward) => {
+      console.log('[MainScreen] User earned reward:', reward);
+      setRewardEarned(true);
+      
+      // 광고 시청 시간 저장
+      const watchedTimestamp = Date.now();
+      console.log('[MainScreen] Saving watched timestamp:', watchedTimestamp, new Date(watchedTimestamp).toLocaleString());
+      
+      // 메모리에 먼저 저장 (AsyncStorage 실패 시 대비)
+      watchedTimestampRef.current = watchedTimestamp;
+      
+      // AsyncStorage에 저장 시도
+      try {
+        await AsyncStorage.setItem(REWARD_AD_WATCHED_KEY, watchedTimestamp.toString());
+        console.log('[MainScreen] Successfully saved timestamp to AsyncStorage');
+        
+        // 저장 확인
+        const saved = await AsyncStorage.getItem(REWARD_AD_WATCHED_KEY);
+        console.log('[MainScreen] Verified saved timestamp:', saved);
+      } catch (storageError) {
+        console.error('[MainScreen] Failed to save timestamp to AsyncStorage:', storageError);
+        console.log('[MainScreen] Using memory backup instead');
+        // AsyncStorage 저장 실패해도 메모리에 저장되어 있으므로 계속 진행
+      }
+      
+      // 언어 변경 적용
+      if (pendingLanguageChange !== null) {
+        setLanguage(pendingLanguageChange);
+        setPendingLanguageChange(null);
+      }
     });
 
-    interstitial.load();
+    const unsubscribeClosed = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
+      console.log('[MainScreen] ===== Rewarded ad closed =====');
+      setRewardedLoaded(false);
+      console.log('[MainScreen] Reloading rewarded ad after close...');
+      rewarded.load();
+      setShowAdModal(false);
+      
+      // 리워드를 받지 않고 닫은 경우에만 언어 변경 취소
+      if (!rewardEarned && pendingLanguageChange !== null) {
+        console.log('[MainScreen] Ad closed without reward, canceling language change');
+        setPendingLanguageChange(null);
+      }
+      
+      // 리워드 상태 리셋
+      setRewardEarned(false);
+    });
 
     return () => {
       unsubscribeLoaded();
+      unsubscribeEarned();
       unsubscribeClosed();
     };
   }, []);
+
+  // 12시간 무료 기간 체크
+  const checkFreePeriod = useCallback(async () => {
+    try {
+      let watchedTime = null;
+      
+      // 먼저 AsyncStorage에서 확인
+      try {
+        const timestamp = await AsyncStorage.getItem(REWARD_AD_WATCHED_KEY);
+        console.log('[MainScreen] checkFreePeriod - timestamp from storage:', timestamp);
+        
+        if (timestamp) {
+          watchedTime = parseInt(timestamp, 10);
+          if (!isNaN(watchedTime)) {
+            console.log('[MainScreen] checkFreePeriod - Using timestamp from AsyncStorage');
+          } else {
+            watchedTime = null;
+          }
+        }
+      } catch (storageError) {
+        console.warn('[MainScreen] checkFreePeriod - AsyncStorage read error:', storageError);
+      }
+      
+      // AsyncStorage에서 못 찾았으면 메모리 백업 확인
+      if (!watchedTime && watchedTimestampRef.current) {
+        watchedTime = watchedTimestampRef.current;
+        console.log('[MainScreen] checkFreePeriod - Using timestamp from memory backup');
+      }
+      
+      if (!watchedTime) {
+        console.log('[MainScreen] checkFreePeriod - No timestamp found, returning false');
+        return false; // 광고를 본 적이 없음
+      }
+      
+      const now = Date.now();
+      const timeSinceWatched = now - watchedTime;
+      const hoursRemaining = (FREE_PERIOD_MS - timeSinceWatched) / (60 * 60 * 1000);
+      
+      console.log('[MainScreen] checkFreePeriod - watchedTime:', new Date(watchedTime).toLocaleString());
+      console.log('[MainScreen] checkFreePeriod - now:', new Date(now).toLocaleString());
+      console.log('[MainScreen] checkFreePeriod - timeSinceWatched (ms):', timeSinceWatched);
+      console.log('[MainScreen] checkFreePeriod - hoursRemaining:', hoursRemaining.toFixed(2));
+      console.log('[MainScreen] checkFreePeriod - FREE_PERIOD_MS:', FREE_PERIOD_MS);
+      
+      const isFree = timeSinceWatched < FREE_PERIOD_MS;
+      console.log('[MainScreen] checkFreePeriod - isFree:', isFree);
+      
+      return isFree; // 12시간 이내면 무료
+    } catch (error) {
+      console.error('[MainScreen] Error checking free period:', error);
+      return false;
+    }
+  }, []);
+
+  // 언어 변경 핸들러
+  const handleLanguageChange = useCallback(async (newLanguage) => {
+    // 현재 선택된 언어와 동일하면 변경하지 않음
+    if (language === newLanguage) {
+      return;
+    }
+    
+    console.log('[MainScreen] Language change requested:', newLanguage);
+    
+    const isFree = await checkFreePeriod();
+    console.log('[MainScreen] Free period check result:', isFree);
+    
+    if (isFree) {
+      // 무료 기간이면 바로 언어 변경 (팝업 없이)
+      console.log('[MainScreen] Free period active, changing language directly');
+      setLanguage(newLanguage);
+    } else {
+      // 무료 기간이 아니면 항상 팝업 먼저 표시 (광고를 보겠는지 물어봄)
+      // 팝업에서 "Watch Ad"를 누르면 그때 광고가 표시됨
+      console.log('[MainScreen] Free period expired, showing ad modal');
+      setPendingLanguageChange(newLanguage);
+      setShowAdModal(true);
+    }
+  }, [language, checkFreePeriod]);
 
   const { isBookmarked, toggleBookmark } = useBookmark();
   const { colors, isDark } = useTheme();
@@ -385,9 +596,8 @@ export default function MainScreen({ navigation }) {
                 language === (userLanguage + 1) && styles.languageOptionActive
               ]}
               onPress={() => {
-                setLanguage(userLanguage + 1);
-                if (loaded) {
-                  interstitial.show();
+                if (language !== (userLanguage + 1)) {
+                  handleLanguageChange(userLanguage + 1);
                 }
               }}
             >
@@ -405,9 +615,8 @@ export default function MainScreen({ navigation }) {
                 language === 0 && styles.languageOptionActive
               ]}
               onPress={() => {
-                setLanguage(0);
-                if (loaded) {
-                  interstitial.show();
+                if (language !== 0) {
+                  handleLanguageChange(0);
                 }
               }}
             >
@@ -471,6 +680,96 @@ export default function MainScreen({ navigation }) {
       default:
         return renderHomeContent();
     }
+  };
+
+  // 광고 팝업 모달
+  const renderAdModal = () => {
+    // 번역 데이터 가져오기
+    const modalTitle = translationsData?.adModal?.title?.[userLanguage] || 
+                       translationsData?.adModal?.title?.[1] || 
+                       'Unlimited Translations\n+ No Video Ads!';
+    const modalDescription = translationsData?.adModal?.description?.[userLanguage] || 
+                             translationsData?.adModal?.description?.[1] || 
+                             'Watch one ad to unlock unlimited translations for 12 hours.';
+    const watchAdText = translationsData?.adModal?.watchAd?.[userLanguage] || 
+                        translationsData?.adModal?.watchAd?.[1] || 
+                        'Watch Ad';
+    const cancelText = translationsData?.adModal?.cancel?.[userLanguage] || 
+                       translationsData?.adModal?.cancel?.[1] || 
+                       'Cancel';
+
+    return (
+      <Modal
+        visible={showAdModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowAdModal(false);
+          setPendingLanguageChange(null);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: '#FFF8E1' }]}>
+            <Text style={styles.modalTitle}>
+              {modalTitle}
+            </Text>
+            <Text style={styles.modalDescription}>
+              {modalDescription}
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowAdModal(false);
+                  setPendingLanguageChange(null);
+                }}
+              >
+                <Text style={styles.modalButtonCancelText}>{cancelText}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonWatch]}
+                onPress={async () => {
+                  console.log('[MainScreen] Watch Ad button pressed, rewardedLoaded:', rewardedLoaded);
+                  if (rewardedLoaded) {
+                    console.log('[MainScreen] Closing modal and showing rewarded ad');
+                    // 팝업을 먼저 닫고, 약간의 지연 후 광고 표시 (팝업 애니메이션이 완료되도록)
+                    setShowAdModal(false);
+                    // 팝업이 완전히 닫힌 후 광고 표시
+                    setTimeout(() => {
+                      console.log('[MainScreen] Showing rewarded ad after modal close');
+                      rewarded.show();
+                    }, 300); // 300ms 지연으로 팝업 닫힘 애니메이션 완료 대기
+                  } else {
+                    // 광고가 로드되지 않았으면 로드 대기
+                    console.log('[MainScreen] Rewarded ad not loaded yet, waiting...');
+                    // 광고 로드 대기 후 표시
+                    const checkLoaded = setInterval(() => {
+                      if (rewardedLoaded) {
+                        clearInterval(checkLoaded);
+                        console.log('[MainScreen] Rewarded ad loaded, showing ad');
+                        setShowAdModal(false);
+                        setTimeout(() => {
+                          rewarded.show();
+                        }, 300);
+                      }
+                    }, 500);
+                    
+                    // 5초 후 타임아웃
+                    setTimeout(() => {
+                      clearInterval(checkLoaded);
+                      console.log('[MainScreen] Timeout waiting for rewarded ad');
+                    }, 5000);
+                  }
+                }}
+                disabled={!rewardedLoaded}
+              >
+                <Text style={styles.modalButtonWatchText}>[{watchAdText}]</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   // 동적 스타일 생성
@@ -571,6 +870,9 @@ export default function MainScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       </View>
+      
+      {/* 광고 팝업 모달 */}
+      {renderAdModal()}
     </View>
   );
 }
@@ -728,5 +1030,72 @@ const styles = StyleSheet.create({
   },
   navItem: {
     alignItems: 'center',
+  },
+  // 광고 팝업 모달 스타일
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    maxWidth: 400,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#5D4037',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: '#5D4037',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#E0E0E0',
+  },
+  modalButtonCancelText: {
+    color: '#424242',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalButtonWatch: {
+    backgroundColor: '#5D4037',
+  },
+  modalButtonWatchText: {
+    color: '#FFF8E1',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

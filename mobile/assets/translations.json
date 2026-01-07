@@ -652,5 +652,43 @@
         "6": "Turn your smartphone into the ultimate flashlight"
       }
     }
+  },
+  "adModal": {
+    "title": {
+      "0": "무제한 번역을\n동영상 광고 없이!",
+      "1": "Unlimited Translations\n+ No Video Ads!",
+      "2": "無制限翻訳を\n動画広告なしで！",
+      "3": "无限制翻译，\n无视频广告！",
+      "4": "無限制翻譯，\n無影片廣告！",
+      "5": "Traductions illimitées\n+ Sans publicité vidéo !",
+      "6": "Traducciones ilimitadas\n+ Sin anuncios de video !"
+    },
+    "description": {
+      "0": "광고 1회를 시청하면 12시간 동안 무제한 번역을 이용할 수 있습니다.",
+      "1": "Watch one ad to unlock unlimited translations for 12 hours.",
+      "2": "広告を1回視聴すると、12時間無制限で翻訳をご利用いただけます。",
+      "3": "观看一次广告即可解锁 12 小时的无限翻译功能。",
+      "4": "觀看一次廣告即可解鎖 12 小時的無限翻譯功能。",
+      "5": "Regardez une publicité pour débloquer des traductions illimitées pendant 12 heures.",
+      "6": "Mira un anuncio para desbloquear traducciones ilimitadas durante 12 horas."
+    },
+    "watchAd": {
+      "0": "광고보기",
+      "1": "Watch Ad",
+      "2": "広告を見る",
+      "3": "观看广告",
+      "4": "觀看廣告",
+      "5": "Voir la publicité",
+      "6": "Ver anuncio"
+    },
+    "cancel": {
+      "0": "취소",
+      "1": "Cancel",
+      "2": "キャンセル",
+      "3": "取消",
+      "4": "取消",
+      "5": "Annuler",
+      "6": "Cancelar"
+    }
   }
 }

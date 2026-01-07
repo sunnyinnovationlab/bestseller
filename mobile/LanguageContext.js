@@ -118,6 +118,9 @@ export const LanguageProvider = ({ children }) => {
         }
       } catch (err) {
         console.error('[Language] Failed to load translations:', err.message);
+        // 번역 로드 실패 시에도 앱이 계속 실행되도록 빈 배열로 설정
+        setTranslations([]);
+        setLanguageLabels([]);
       }
     };
     loadTranslations();

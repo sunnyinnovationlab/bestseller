@@ -314,10 +314,10 @@ export default function SettingsPage({ navigation }) {
 
           {isSlideshowIntervalOpen && (
             <View style={[dynamicStyles.slideshowIntervalPicker, { backgroundColor: colors.secondaryBackground }]}>
-              <Text style={[dynamicStyles.pickerLabel, { color: colors.text }]}>Minutes (1-10)</Text>
+              <Text style={[dynamicStyles.pickerLabel, { color: colors.text }]}>Minutes (1-14)</Text>
               <ScrollView style={styles.timePickerScrollView} nestedScrollEnabled={true}>
                 <View style={styles.timePickerRow}>
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((minute) => (
+                  {Array.from({ length: 14 }, (_, i) => i + 1).map((minute) => (
                     <TouchableOpacity
                       key={minute}
                       style={[

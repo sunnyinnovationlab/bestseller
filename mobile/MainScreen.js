@@ -97,20 +97,45 @@ export default function MainScreen({ navigation }) {
   }, [navigation]);
 
   useEffect(() => {
-    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      setLoaded(true);
-    });
+    let unsubscribeLoaded;
+    let unsubscribeClosed;
+    let unsubscribeError;
 
-    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      setLoaded(false);
+    try {
+      unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+        console.log('[MainScreen] Interstitial ad loaded');
+        setLoaded(true);
+      });
+
+      unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+        console.log('[MainScreen] Interstitial ad closed');
+        setLoaded(false);
+        try {
+          interstitial.load();
+        } catch (error) {
+          console.error('[MainScreen] Failed to reload interstitial ad:', error);
+        }
+      });
+
+      unsubscribeError = interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
+        console.error('[MainScreen] Interstitial ad error:', error);
+        setLoaded(false);
+      });
+
       interstitial.load();
-    });
-
-    interstitial.load();
+    } catch (error) {
+      console.error('[MainScreen] Failed to set up interstitial ad:', error);
+      setLoaded(false);
+    }
 
     return () => {
-      unsubscribeLoaded();
-      unsubscribeClosed();
+      try {
+        if (unsubscribeLoaded) unsubscribeLoaded();
+        if (unsubscribeClosed) unsubscribeClosed();
+        if (unsubscribeError) unsubscribeError();
+      } catch (error) {
+        console.error('[MainScreen] Error cleaning up ad listeners:', error);
+      }
     };
   }, []);
 

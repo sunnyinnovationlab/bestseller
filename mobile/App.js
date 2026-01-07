@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { MobileAds } from 'react-native-google-mobile-ads';
 import BookDetail from './BookDetail';
 import { BookmarkProvider } from './BookmarkContext';
 import { LanguageProvider } from './LanguageContext';
@@ -58,6 +59,21 @@ const Stack = createNativeStackNavigator();
 // }
 
 export default function App() {
+  // MobileAds 초기화 (앱 시작 시 한 번만 실행)
+  React.useEffect(() => {
+    const initializeAds = async () => {
+      try {
+        await MobileAds().initialize();
+        console.log('[App] MobileAds initialized successfully');
+      } catch (error) {
+        console.error('[App] MobileAds initialization failed:', error);
+        // 초기화 실패해도 앱은 계속 실행되도록 함
+      }
+    };
+    
+    initializeAds();
+  }, []);
+
   return (
     <ThemeProvider>
       <LanguageProvider>

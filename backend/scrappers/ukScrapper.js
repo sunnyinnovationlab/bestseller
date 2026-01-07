@@ -102,7 +102,7 @@ async function fetchBooksMain() {
 
   // --------------------- result_uk.json에 저장 ---------------------
   // backend/scrappers/ukScrapper.js 기준으로 ../json_results
-  const outputDir = path.join(__dirname, '..', 'json_results');
+  const outputDir = path.join(process.cwd(), 'json_results');
 
   // Create folder if it doesn't exist
   if (!fs.existsSync(outputDir)) {

@@ -5,7 +5,7 @@ import { GoogleAuth } from 'google-auth-library';
 import 'dotenv/config';
 
 function readBooksJSON(filename) {
-  const jsonPath = path.join(process.cwd(), 'backend', 'json_results', filename);
+  const jsonPath = path.join(process.cwd(), 'json_results', filename);
 
   if (!fs.existsSync(jsonPath)) {
     console.warn(`⚠️ File not found: ${jsonPath}`);

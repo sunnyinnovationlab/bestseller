@@ -200,7 +200,7 @@ export default async function spainScrapper() {
     }
   }
 
-  const outputDir = path.join(__dirname, '..', 'json_results');
+  const outputDir = path.join(process.cwd(), 'json_results');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }

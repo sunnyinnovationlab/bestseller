@@ -37,6 +37,11 @@ const APP_LIST = [
     link: 'https://decibella.onelink.me/Ve6i/vydwhkh4',
     icon: require('./assets/decibella Icon 1024.png'),
   },
+  {
+    name: 'Wisdom Qclock',
+    link: 'https://wisdomqclock.onelink.me/SVr2/b7gs4og1',
+    icon: require('./assets/Wisdom Qclock Icon.png'),
+  },
 ];
 
 export default function SunnyGamesAppsPage({ navigation }) {

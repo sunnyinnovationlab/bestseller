@@ -495,17 +495,32 @@ export default function BookDetail({ route, navigation }) {
           moreInfoContentForAuthor,
         );
 
+        // 저자 이름 (언어에 따라 선택)
+        const authorName =
+          language === 'korean' && book.author_kr
+            ? book.author_kr
+            : language === 'japanese' && book.author_ja
+            ? book.author_ja
+            : language === 'chinese' && book.author_zh
+            ? book.author_zh
+            : language === 'french' && book.author_fr
+            ? book.author_fr
+            : language === 'spanish' && book.author_es
+            ? book.author_es
+            : book.author || 'Unknown Author';
+
         return (
           <View style={styles.tabContent}>
             <Text style={styles.tabContentTitle}>{getTabTitle('author')}</Text>
-            {isEmptyContent(authorContent) ||
-            isAuthorSameAsAboutBook ||
-            isAuthorSameAsMoreInfo ? (
-              <Text style={styles.tabContentText}>
-                {getTranslation('noInformation')}
-              </Text>
-            ) : (
-              <Text style={styles.tabContentText}>
+            {/* 저자 이름은 항상 표시 */}
+            <Text style={styles.tabContentText}>
+              <Text style={{ fontWeight: 'bold' }}>{authorName}</Text>
+            </Text>
+            {/* 저자 정보가 있으면 표시 */}
+            {!isEmptyContent(authorContent) &&
+            !isAuthorSameAsAboutBook &&
+            !isAuthorSameAsMoreInfo && (
+              <Text style={[styles.tabContentText, { marginTop: 12 }]}>
                 {renderTextWithLineBreaks(authorContent)}
               </Text>
             )}
